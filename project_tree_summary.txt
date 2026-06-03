@@ -1,0 +1,37 @@
+python-plot-analysis/
+│
+├── .gitignore                # Ignores __pycache__, .venv, and raw data files
+├── README.md                 # Explains what the app does and how to run it
+├── requirements.txt          # Lists pandas, PySide6, pyqtgraph, lmfit, etc.
+├── LICENSE                   # (Optional but recommended) e.g., MIT License
+│
+├── examples/                 # A safe place for dummy data
+│   └── default_project/      # Contains a sample PF, DF, and some .dat files
+│
+├── tests/                    # Future-proofing: where you write automated tests
+│   ├── test_parsers.py       # Tests to ensure your 99% parser doesn't break
+│   └── test_fitting.py       # Tests for your lmfit math
+│
+└── src/                      # All application code lives inside here
+    └── plot_app/             # The actual name of your Python package
+        │
+        ├── __init__.py       # Makes 'plot_app' an importable Python module
+        ├── main.py           # The single entry point to launch the GUI
+        │
+        ├── core/             # THE MODEL: Pure Python, zero PySide6 imports here
+        │   ├── __init__.py
+        │   ├── parsers.py    # The heuristic 99% accurate .dat reader
+        │   ├── fitting.py    # lmfit wrappers and .func file handlers
+        │   └── batch.py      # Logic for looping over folders safely
+        │
+        ├── ui/               # THE VIEW: All PySide6 and pyqtgraph code
+        │   ├── __init__.py
+        │   ├── main_window.py # The main shell of the app
+        │   ├── plot_canvas.py # Your fast pyqtgraph interactive widget
+        │   ├── dialogs.py     # Pop-ups for mapping columns/settings
+        │   └── tree_view.py   # Code handling the QFileSystemModel (Folder view)
+        │
+        └── utils/            # THE HELPERS: Small, repetitive tasks
+            ├── __init__.py
+            ├── file_ops.py   # Safe reading/writing of .adat and .mdat files
+            └── logger.py     # The "skip and log" error handler for batch runs
