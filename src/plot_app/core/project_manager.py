@@ -7,6 +7,13 @@ class ProjectManager:
         self.config = None
         self.is_project_loaded = False
 
+    def _is_folder_valid_project(self, folder_path: str | Path) -> bool:
+        """Checks if the given folder has the necessary structure to be considered a valid project."""
+        pf_path = Path(folder_path)
+        config_path = pf_path / ".other" / "project_prefs.json"
+
+        return pf_path.exists() and config_path.exists()
+
     def create_new_project(self, target_folder: str | Path) -> bool:
         """Generates the PF, DF, and AF tree for a brand-new project."""
         pf_path = Path(target_folder)
