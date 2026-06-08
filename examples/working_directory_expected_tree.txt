@@ -1,0 +1,23 @@
+Project_parent_folder/         #selected on launch
+│
+├── Data_Folder               # Read-only. In theory could be pointed outside PF, but shouldnt.
+│   ├── Day1
+│   │     ├── run1.dat        # .dat files
+│   │     ├── run2.dat
+│   │     ...
+│   ├── ...
+│   ...
+│ 
+├── Analysis_Folder           # Write and read directory. Basically every analysed file goes in here. Stores .adat, .fit, .mdat
+│   ├── Day1
+│   │     ├── run1.fit        # .fit files
+│   │     ├── run2.dat
+│   │     ...
+│   ├── ...
+│   ...          
+├── Functions_Folder          # Stores .func files. Future idea: func files could be saved in a general directory for easy use between different projects
+│
+└── .other
+      ├── plot_preferences
+      ├── project_preferences 
+      ...
