@@ -1,0 +1,50 @@
+from pathlib import Path
+from core.config_manager import ProjectConfig
+
+class ProjectManager:
+    def __init__(self):
+        self.active_project_path = None
+        self.config = None
+        self.is_project_loaded = False
+
+    def create_new_project(self, target_folder: str | Path) -> bool:
+        """Generates the PF, DF, and AF tree for a brand-new project."""
+        pf_path = Path(target_folder)
+
+        # 1. Define the subfolders
+        df_path = pf_path / "DF"
+        af_path = pf_path / "AF"
+        
+        try:
+            # 2. Create the directories safely
+            # exist_ok=True ensures the app doesn't crash if the folder already exists
+            df_path.mkdir(parents=True, exist_ok=True)
+            af_path.mkdir(parents=True, exist_ok=True)
+
+            # 3. Store the active project path
+            self.active_project_path = pf_path
+            
+            # 4. Initialize the config (this creates project_prefs.json with defaults in .other/)
+            self.config = ProjectConfig(self.active_project_path)
+            
+            self.is_project_loaded = True
+            return True
+            
+        except Exception as e:
+            print(f"Failed to create project tree: {e}")
+            return False
+
+    def load_project(self, folder_path: str | Path) -> bool:
+        """Initializes a project from a given folder."""
+        pf_path = Path(folder_path)
+        
+        if not pf_path.exists():
+            return False
+            
+        self.active_project_path = pf_path
+        
+        # This will load existing prefs OR create the default prefs
+        self.config = ProjectConfig(self.active_project_path)
+        self.is_project_loaded = True
+        
+        return True
