@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
         self.status_bar = self.statusBar()
-        self.status_bar.showMessage("Ready")
+        self.status_bar.showMessage("Ready. Create a new project or open an existing one.")
 
     def _connect_signals(self):
         """Connects UI events (clicks, text changes) to logic functions."""
