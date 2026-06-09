@@ -45,8 +45,9 @@ class ProjectManager:
         """Initializes a project from a given folder."""
         pf_path = Path(folder_path)
         
-        if not pf_path.exists():
+        if not pf_path.exists() or not self._is_folder_valid_project(pf_path):
             return False
+ 
             
         self.active_project_path = pf_path
         
