@@ -2,6 +2,9 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QL
 from PySide6.QtCore import Qt
 from core.project_manager import ProjectManager
 from pathlib import Path
+from ui.plot_canvas import PlotCanvas
+import numpy as np
+from core.parsers import sniff_and_read_dat
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -90,13 +93,8 @@ class MainWindow(QMainWindow):
         self.right_layout.setContentsMargins(0, 0, 0, 0)
         
         # Placeholder for our future pyqtgraph canvas
-        self.plot_placeholder = QLabel("Interactive Plot Canvas Will Go Here")
-        self.plot_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.plot_placeholder.setStyleSheet(
-            "background-color: #2b2b2b; color: #888888; border: 1px solid #555555; border-radius: 4px;"
-        )
-        
-        self.right_layout.addWidget(self.plot_placeholder)
+        self.plot_canvas = PlotCanvas()
+        self.right_layout.addWidget(self.plot_canvas)
 
         # --- 4. Add Panels to the Splitter ---
         self.splitter.addWidget(self.left_panel)
@@ -111,7 +109,7 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self):
         """Connects UI events (clicks, text changes) to logic functions."""
-        pass
+        self.file_list.itemClicked.connect(self.on_file_selected)
 
     def _refresh_file_list(self):
         """Clears the list widget and populates it with .dat files from the Data Folder."""
@@ -187,3 +185,27 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("Project configs saved successfully.")
         else:
             self.status_bar.showMessage("No project loaded to save configs.")
+
+    def on_file_selected(self, item):
+        """Triggered when a file is clicked in the list. Loads the data and updates the plot."""
+        filename = item.text()
+        data_folder_str = self.project_manager.config.settings.get("data_folder")
+        
+        if not data_folder_str:
+            self.status_bar.showMessage("Data folder not set in project config.")
+            return
+            
+        file_path = Path(data_folder_str) / filename
+
+        try:
+            df = sniff_and_read_dat(file_path)
+            x_col_idx = self.project_manager.config.settings["column_mapping"]["x_col"]
+            y_col_idx = self.project_manager.config.settings["column_mapping"]["y_col"]
+
+            x_data = df.iloc[:, x_col_idx]
+            y_data = df.iloc[:, y_col_idx]
+
+            self.plot_canvas.plot_data(x_data, y_data, title=filename)
+            self.status_bar.showMessage(f"Plotted: {filename}")
+        except Exception as e:
+            self.status_bar.showMessage(f"Error loading {filename}: {str(e)}")
