@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         self.left_layout.setContentsMargins(0, 0, 0, 0)
 
         # Added a label just to make the UI look a bit more polished
-        self.file_list_label = QLabel("Project Files:") 
+        self.file_list_label = QLabel("Data Folder:") 
         self.file_list = QListWidget()
 
         self.left_layout.addWidget(self.file_list_label)
@@ -102,6 +102,7 @@ class MainWindow(QMainWindow):
 
         # --- 5. Set Initial Proportions (25% left, 75% right) ---
         self.splitter.setSizes([250, 750])
+    
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
         self.status_bar = self.statusBar()
@@ -209,3 +210,5 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Plotted: {filename}")
         except Exception as e:
             self.status_bar.showMessage(f"Error loading {filename}: {str(e)}")
+
+    
