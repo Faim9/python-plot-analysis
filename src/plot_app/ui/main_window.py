@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
 
         #For some reason, if we don't set the root path to the actual filesystem root, the model doesn't populate at all. 
         #It doesn't matter that we later set the root index to the Data Folder - if we don't do this step, the model just stays asleep.
-        self.file_system_model.setRootPath(QDir.rootPath())
+        #self.file_system_model.setRootPath(QDir.rootPath())
 
         #Filter to only show .dat files and directories
         self.file_system_model.setNameFilters(["*.dat"])
@@ -104,6 +104,7 @@ class MainWindow(QMainWindow):
         self.file_tree_view.hideColumn(2)  # Hide Type column
         self.file_tree_view.hideColumn(3)  # Hide Date Modified column
 
+        self.file_tree_view.hide() # Start hidden until a project is loaded and we can set the root index to the Data Folder
 
         # Add label and TreeView for file and folder structure (starting with the Data Folder)
         self.file_tree_system_label = QLabel("Data Folder:") 
@@ -154,6 +155,8 @@ class MainWindow(QMainWindow):
         if not data_folder_str:
             return
         
+        # Set the model's root path to the Data Folder.
+        self.file_system_model.setRootPath(data_folder_str)
         
         # 3. Lock the TreeView into the Data Folder
         # We ask the model for the exact index of /DF folder
@@ -161,6 +164,9 @@ class MainWindow(QMainWindow):
         
         # We tell the UI to set that index as the absolute ceiling
         self.file_tree_view.setRootIndex(target_index)
+        
+        self.file_tree_view.show()
+
 
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
