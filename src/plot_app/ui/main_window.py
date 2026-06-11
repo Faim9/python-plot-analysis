@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
             return
 
         # 2. Get the Data Folder path from the config manager
-        data_folder_str = self.project_manager.config.settings.get("data_folder")
+        data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
         if not data_folder_str:
             return
             
@@ -172,16 +172,16 @@ class MainWindow(QMainWindow):
 
     def save_project(self):
         """Saves the current project settings."""
-        if self.project_manager.config:
-            self.project_manager.config.save()
+        if self.project_manager.project_config:
+            self.project_manager.project_config.save()
             self.status_bar.showMessage("Project saved successfully.")
         else:
             self.status_bar.showMessage("No project loaded to save.")
 
     def save_configs(self):
         """Saves the current project settings."""
-        if self.project_manager.config:
-            self.project_manager.config.save()
+        if self.project_manager.project_config:
+            self.project_manager.project_config.save()
             self.status_bar.showMessage("Project configs saved successfully.")
         else:
             self.status_bar.showMessage("No project loaded to save configs.")
@@ -189,8 +189,8 @@ class MainWindow(QMainWindow):
     def on_file_selected(self, item):
         """Triggered when a file is clicked in the list. Loads the data and updates the plot."""
         filename = item.text()
-        data_folder_str = self.project_manager.config.settings.get("data_folder")
-        
+        data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
+
         if not data_folder_str:
             self.status_bar.showMessage("Data folder not set in project config.")
             return
@@ -199,8 +199,8 @@ class MainWindow(QMainWindow):
 
         try:
             df = sniff_and_read_dat(file_path)
-            x_col_idx = self.project_manager.config.settings["column_mapping"]["x_col"]
-            y_col_idx = self.project_manager.config.settings["column_mapping"]["y_col"]
+            x_col_idx = self.project_manager.project_config["column_mapping"]["x_col"] #type: ignore
+            y_col_idx = self.project_manager.project_config["column_mapping"]["y_col"] #type: ignore
 
             x_data = df.iloc[:, x_col_idx]
             y_data = df.iloc[:, y_col_idx]
