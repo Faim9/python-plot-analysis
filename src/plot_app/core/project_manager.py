@@ -4,13 +4,14 @@ from core.config_manager import ProjectConfig
 class ProjectManager:
     def __init__(self):
         self.active_project_path = None
-        self.config = None
+        self.project_config = None
         self.is_project_loaded = False
 
     def _is_folder_valid_project(self, folder_path: str | Path) -> bool:
         """Checks if the given folder has the necessary structure to be considered a valid project."""
+        # For a folder to be a valid project, it only needs the .other/project_config.json file
         pf_path = Path(folder_path)
-        config_path = pf_path / ".other" / "project_prefs.json"
+        config_path = pf_path / ".other" / "project_config.json"
 
         return pf_path.exists() and config_path.exists()
 
@@ -32,7 +33,7 @@ class ProjectManager:
             self.active_project_path = pf_path
             
             # 4. Initialize the config (this creates project_prefs.json with defaults in .other/)
-            self.config = ProjectConfig(self.active_project_path)
+            self.project_config = ProjectConfig(self.active_project_path)
             
             self.is_project_loaded = True
             return True
@@ -51,8 +52,11 @@ class ProjectManager:
             
         self.active_project_path = pf_path
         
-        # This will load existing prefs OR create the default prefs
-        self.config = ProjectConfig(self.active_project_path)
+        # This will load existing config
+        self.project_config = ProjectConfig(self.active_project_path)
         self.is_project_loaded = True
         
         return True
+    
+
+
