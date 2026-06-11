@@ -1,10 +1,14 @@
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QListWidget, QSplitter, QLabel
-from PySide6.QtCore import Qt
+#Importing Pyside6 modules
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QListWidget, QSplitter, QLabel, QTreeView, QDockWidget, QFileSystemModel
+from PySide6.QtCore import Qt, QDir
+
+#Importing our own modules
 from core.project_manager import ProjectManager
-from pathlib import Path
 from ui.plot_canvas import PlotCanvas
-import numpy as np
 from core.parsers import sniff_and_read_dat
+
+#Other imports
+from pathlib import Path
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -59,11 +63,11 @@ class MainWindow(QMainWindow):
         # Add the refresh button to the toolbar
         refresh_btn = self.toolbar.addAction("↻ Refresh")
         
-        # Connect it to the exact same function
+        # Connect it to the function
         refresh_btn.triggered.connect(self._refresh_file_list)
         
     def _setup_central_widget(self):
-        """Creates and places all visual widgets into layouts using a QSplitter."""
+        """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         
@@ -75,24 +79,44 @@ class MainWindow(QMainWindow):
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.main_layout.addWidget(self.splitter)
 
-        # --- 2. Create the Left Panel (Files) ---
+        # --- 2. Create the Left Panel---
         self.left_panel = QWidget()
         self.left_layout = QVBoxLayout(self.left_panel)
         self.left_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Added a label just to make the UI look a bit more polished
-        self.file_list_label = QLabel("Data Folder:") 
-        self.file_list = QListWidget()
 
-        self.left_layout.addWidget(self.file_list_label)
-        self.left_layout.addWidget(self.file_list)
+        #Create the FileSystemModel
+        self.file_system_model = QFileSystemModel()
+        self.file_system_model.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.AllDirs | QDir.Filter.Files)
+
+        #For some reason, if we don't set the root path to the actual filesystem root, the model doesn't populate at all. 
+        #It doesn't matter that we later set the root index to the Data Folder - if we don't do this step, the model just stays asleep.
+        self.file_system_model.setRootPath(QDir.rootPath())
+
+        #Filter to only show .dat files and directories
+        self.file_system_model.setNameFilters(["*.dat"])
+        self.file_system_model.setNameFilterDisables(False)  # Hide non-matching files
+
+        #Create the Tree View and set the model
+        self.file_tree_view = QTreeView()
+        self.file_tree_view.setModel(self.file_system_model)
+        self.file_tree_view.hideColumn(1)  # Hide Size column
+        self.file_tree_view.hideColumn(2)  # Hide Type column
+        self.file_tree_view.hideColumn(3)  # Hide Date Modified column
+
+
+        # Add label and TreeView for file and folder structure (starting with the Data Folder)
+        self.file_tree_system_label = QLabel("Data Folder:") 
+
+        self.left_layout.addWidget(self.file_tree_system_label)
+        self.left_layout.addWidget(self.file_tree_view)
 
         # --- 3. Create the Right Panel (Plots) ---
         self.right_panel = QWidget()
         self.right_layout = QVBoxLayout(self.right_panel)
         self.right_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Placeholder for our future pyqtgraph canvas
+        # Add the PlotCanvas to the right panel
         self.plot_canvas = PlotCanvas()
         self.right_layout.addWidget(self.plot_canvas)
 
@@ -110,29 +134,33 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self):
         """Connects UI events (clicks, text changes) to logic functions."""
-        self.file_list.itemClicked.connect(self.on_file_selected)
+        self.file_tree_view.clicked.connect(self.on_file_selected)
 
     def _refresh_file_list(self):
         """Clears the list widget and populates it with .dat files from the Data Folder."""
-        self.file_list.clear()
-
         # 1. Safety check: Ensure a project is actually loaded
         if not self.project_manager.is_project_loaded:
             return
 
-        # 2. Get the Data Folder path from the config manager
+        # 2. Get the Data Folder path from the config manager 
+        #Check there is a project loaded
+        config = self.project_manager.project_config
+        if not config:
+            return
+        #Get the data folder path
         data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
+        
+        # If it isn't set, (unlikely, if it passed previous checks, but just in case) return early
         if not data_folder_str:
             return
-            
-        data_folder_path = Path(data_folder_str)
-
-        # 3. Read the directory and add files
-        if data_folder_path.exists():
-            for item in sorted(data_folder_path.iterdir()):
-                # Only show actual files (no sub-folders) that end in .dat
-                if item.is_file() and item.suffix.lower() == '.dat':
-                    self.file_list.addItem(item.name)
+        
+        
+        # 3. Lock the TreeView into the Data Folder
+        # We ask the model for the exact index of /DF folder
+        target_index = self.file_system_model.index(data_folder_str)
+        
+        # We tell the UI to set that index as the absolute ceiling
+        self.file_tree_view.setRootIndex(target_index)
 
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
@@ -187,16 +215,27 @@ class MainWindow(QMainWindow):
         else:
             self.status_bar.showMessage("No project loaded to save configs.")
 
-    def on_file_selected(self, item):
+    def on_file_selected(self, index):
         """Triggered when a file is clicked in the list. Loads the data and updates the plot."""
-        filename = item.text()
-        data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
+        #Some checks first
+        if not self.project_manager.is_project_loaded:
+            return
 
+        #Get the path of the selected file from the model using the index
+        file_path = Path(self.file_system_model.filePath(index))
+
+        #If it's a directory, ignore the click (we only want to plot files)
+        if file_path.is_dir():
+            return
+
+        #Get the data folder path from the project config to construct the full path to the file
+        data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
+        
         if not data_folder_str:
             self.status_bar.showMessage("Data folder not set in project config.")
             return
             
-        file_path = Path(data_folder_str) / filename
+        filename = file_path.name 
 
         try:
             df = sniff_and_read_dat(file_path)
