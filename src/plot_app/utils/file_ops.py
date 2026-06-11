@@ -11,6 +11,12 @@ def save_json(filepath: Path, data: dict):
 def load_json(filepath: Path) -> dict:
     """Reads a JSON file into a dictionary. Returns empty dict if missing."""
     if not filepath.exists():
+        print(f"Warning: {filepath} does not exist. Returning empty dict.")
         return {}
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    else:
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            print(f"Warning: Failed to decode JSON from {filepath}. Returning empty dict.")
+            return {}
