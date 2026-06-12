@@ -1,6 +1,7 @@
 import pandas as pd
 import csv
 import re
+from pathlib import Path
 
 def _is_data_row(line: str) -> bool:
     """
@@ -21,7 +22,7 @@ def _is_data_row(line: str) -> bool:
     except ValueError:
         return False
 
-def sniff_and_read_dat(filepath: str, scan_lines: int = 100) -> pd.DataFrame:
+def sniff_and_read_dat(filepath: str | Path, scan_lines: int = 100) -> pd.DataFrame:
     """
     Heuristically parses a messy .dat file, bypasses text headers, 
     detects delimiters, and returns a clean Pandas DataFrame.

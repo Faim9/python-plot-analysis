@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QDir
 from core.project_manager import ProjectManager
 from ui.plot_canvas import PlotCanvas
 from core.parsers import sniff_and_read_dat
+from ui.left_widgets import DataFolderTreeWidget
 
 #Other imports
 from pathlib import Path
@@ -27,7 +28,7 @@ class MainWindow(QMainWindow):
         self._setup_status_bar()
         
         # 3. Connect buttons to functions (Signals & Slots)
-        self._connect_signals()
+        #self._connect_signals()
 
     def _setup_window(self):
         """Configures the main window's size, title, and base settings."""
@@ -53,18 +54,11 @@ class MainWindow(QMainWindow):
         # 2. ---View menu---
         view_menu = menubar.addMenu("View")
 
-        refresh_folder_action = view_menu.addAction("Refresh Folder View")
-        refresh_folder_action.triggered.connect(self._refresh_file_list)
-
+    
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
         self.toolbar = self.addToolBar("Toolbar")
-        
-        # Add the refresh button to the toolbar
-        refresh_btn = self.toolbar.addAction("↻ Refresh")
-        
-        # Connect it to the function
-        refresh_btn.triggered.connect(self._refresh_file_list)
+
         
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
@@ -83,34 +77,6 @@ class MainWindow(QMainWindow):
         self.left_panel = QWidget()
         self.left_layout = QVBoxLayout(self.left_panel)
         self.left_layout.setContentsMargins(0, 0, 0, 0)
-
-
-        #Create the FileSystemModel
-        self.file_system_model = QFileSystemModel()
-        self.file_system_model.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.AllDirs | QDir.Filter.Files)
-
-        #For some reason, if we don't set the root path to the actual filesystem root, the model doesn't populate at all. 
-        #It doesn't matter that we later set the root index to the Data Folder - if we don't do this step, the model just stays asleep.
-        #self.file_system_model.setRootPath(QDir.rootPath())
-
-        #Filter to only show .dat files and directories
-        self.file_system_model.setNameFilters(["*.dat"])
-        self.file_system_model.setNameFilterDisables(False)  # Hide non-matching files
-
-        #Create the Tree View and set the model
-        self.file_tree_view = QTreeView()
-        self.file_tree_view.setModel(self.file_system_model)
-        self.file_tree_view.hideColumn(1)  # Hide Size column
-        self.file_tree_view.hideColumn(2)  # Hide Type column
-        self.file_tree_view.hideColumn(3)  # Hide Date Modified column
-
-        self.file_tree_view.hide() # Start hidden until a project is loaded and we can set the root index to the Data Folder
-
-        # Add label and TreeView for file and folder structure (starting with the Data Folder)
-        self.file_tree_system_label = QLabel("Data Folder:") 
-
-        self.left_layout.addWidget(self.file_tree_system_label)
-        self.left_layout.addWidget(self.file_tree_view)
 
         # --- 3. Create the Right Panel (Plots) ---
         self.right_panel = QWidget()
@@ -137,36 +103,6 @@ class MainWindow(QMainWindow):
         """Connects UI events (clicks, text changes) to logic functions."""
         self.file_tree_view.clicked.connect(self.on_file_selected)
 
-    def _refresh_file_list(self):
-        """Clears the list widget and populates it with .dat files from the Data Folder."""
-        # 1. Safety check: Ensure a project is actually loaded
-        if not self.project_manager.is_project_loaded:
-            return
-
-        # 2. Get the Data Folder path from the config manager 
-        #Check there is a project loaded
-        config = self.project_manager.project_config
-        if not config:
-            return
-        #Get the data folder path
-        data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
-        
-        # If it isn't set, (unlikely, if it passed previous checks, but just in case) return early
-        if not data_folder_str:
-            return
-        
-        # Set the model's root path to the Data Folder.
-        self.file_system_model.setRootPath(data_folder_str)
-        
-        # 3. Lock the TreeView into the Data Folder
-        # We ask the model for the exact index of /DF folder
-        target_index = self.file_system_model.index(data_folder_str)
-        
-        # We tell the UI to set that index as the absolute ceiling
-        self.file_tree_view.setRootIndex(target_index)
-        
-        self.file_tree_view.show()
-
 
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
@@ -183,7 +119,9 @@ class MainWindow(QMainWindow):
 
         if success:
             self.status_bar.showMessage(f"Project created at: {folder}")
-            self._refresh_file_list()
+            self.file_tree = DataFolderTreeWidget()
+            self.left_layout.addWidget(self.file_tree)
+            self.file_tree.refresh(Path(folder)/'DF')
         else:
             self.status_bar.showMessage("Failed to create project.")
 
@@ -201,7 +139,9 @@ class MainWindow(QMainWindow):
 
         if success:
             self.status_bar.showMessage(f"Project loaded from: {folder}")
-            self._refresh_file_list()
+            self.file_tree = DataFolderTreeWidget()
+            self.left_layout.addWidget(self.file_tree)
+            self.file_tree.refresh(Path(folder)/'DF')
         else:
             self.status_bar.showMessage("Failed to load project.")
 
