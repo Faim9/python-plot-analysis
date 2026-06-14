@@ -52,8 +52,8 @@ class ProjectManager:
             
         self.active_project_path = pf_path
         
-        # This will load existing config
-        self.project_config = ProjectConfig(self.active_project_path)
+        # This will load the existing config
+        self.project_config = ProjectConfig(project_dir=self.active_project_path)
         self.is_project_loaded = True
         
         return True

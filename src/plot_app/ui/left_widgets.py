@@ -82,6 +82,10 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         self.refresh_btn.clicked.connect(self._on_refresh_clicked)
         self.current_data_folder = None #Later give the widget the data folder path to its memory, so refreshing is cleaner
 
+        # 5. Handle file selection and double click
+        self.file_tree_view.clicked.connect(self._on_clicked)
+        self.file_tree_view.doubleClicked.connect(self._on_double_clicked)
+
         # 4. Add the tree to the inherited content area
         self.content_layout.addWidget(self.file_tree_view)
 
@@ -89,6 +93,21 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         """Triggered by the refresh button. Uses internal widget saved data folder path"""
         if self.current_data_folder is not None:
             self.refresh(self.current_data_folder)
+
+    def _on_clicked(self, index):
+
+        click_path = Path(self.model.filePath(index))
+
+        if click_path.is_dir():
+            return
+        
+
+
+    def _on_double_clicked(self, index):
+        """FileTree focus the double clicked directory, without overwriting self.current_data_folder, so refresh still resets main view."""
+        #Useful for navigating more comple data folders without relying on pure FileTree format
+
+        pass
         
 
     def refresh(self, data_folder: str| Path):

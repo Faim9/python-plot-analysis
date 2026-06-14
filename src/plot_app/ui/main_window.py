@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
             return
 
         #Get the data folder path from the project config to construct the full path to the file
-        data_folder_str = self.project_manager.project_config["data_folder"] #type: ignore
+        data_folder_str = self.project_manager.active_project_path #type: ignore
         
         if not data_folder_str:
             self.status_bar.showMessage("Data folder not set in project config.")

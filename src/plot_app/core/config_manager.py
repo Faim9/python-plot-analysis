@@ -66,7 +66,6 @@ class ProjectConfig(ConfigManager):
 
         # 4. Define a fallback config for any crucial keys that must exist for the app to function, even if the default config file is missing or corrupted.
         FALLBACK_CONFIG = {
-            "data_folder": str(self.project_dir / "DF"),
             "plot_prefs": {
                 "line_width": 2.0,
                 "scatter_size": 5,

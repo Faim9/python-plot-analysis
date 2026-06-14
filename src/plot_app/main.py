@@ -5,7 +5,6 @@ from ui.main_window import MainWindow
 def main():
     app = QApplication(sys.argv)
     
-    # The MainWindow will handle asking the user for the folder
     window = MainWindow()
     window.show()
     
