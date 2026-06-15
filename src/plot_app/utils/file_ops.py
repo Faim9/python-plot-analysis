@@ -20,3 +20,32 @@ def load_json(filepath: Path) -> dict:
         except json.JSONDecodeError:
             print(f"Warning: Failed to decode JSON from {filepath}. Returning empty dict.")
             return {}
+        
+
+def get_safe_path_destination(proposed_path: Path) -> Path:
+        """
+        Checks if a path exists. If it does, appends _v1, _v2, etc.
+        Works flawlessly for both files (Test.dat -> Test_v1.dat) 
+        and folders (My_Data -> My_Data_v1).
+        """
+        # If the coast is clear, just return the original path!
+        if not proposed_path.exists():
+            return proposed_path
+            
+        # The path exists. We need to split it apart to inject the version number.
+        directory = proposed_path.parent
+        stem = proposed_path.stem      # e.g., "Test_1" or "My_Folder"
+        suffix = proposed_path.suffix  # e.g., ".dat" or "" (for folders)
+        
+        counter = 1
+        while True:
+            # Construct the new candidate: "Test_1_v1.dat"
+            new_name = f"{stem}_v{counter}{suffix}"
+            candidate_path = directory / new_name
+            
+            # If this new name doesn't exist, we return it.
+            if not candidate_path.exists():
+                return candidate_path
+                
+            # If _v1 is also taken, loop again and try _v2
+            counter += 1
