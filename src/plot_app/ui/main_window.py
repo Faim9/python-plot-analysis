@@ -165,23 +165,10 @@ class MainWindow(QMainWindow):
             return
         
         if file_path.suffix == '.dat' and file_tree_object == 'DF': #Hand to Plot_canvas
-
-            #self.plot_canvas.plot_file(file_path) Implement this in plot_canvas class
-            pass
-            
-        filename = file_path.name 
-
-        try:
-            df = sniff_and_read_dat(file_path)
-            x_col_idx = self.project_manager.project_config["column_mapping"]["x_col"] #type: ignore
-            y_col_idx = self.project_manager.project_config["column_mapping"]["y_col"] #type: ignore
-
-            x_data = df.iloc[:, x_col_idx]
-            y_data = df.iloc[:, y_col_idx]
-
-            self.plot_canvas.plot_data(x_data, y_data, title=filename)
-            self.status_bar.showMessage(f"Plotted: {filename}")
-        except Exception as e:
-            self.status_bar.showMessage(f"Error loading {filename}: {str(e)}")
+            try:
+                self.plot_canvas.plot_file(file_path, self.project_manager.project_config['plot_prefs']) #type: ignore
+                self.status_bar.showMessage(f"Plotted: {file_path.name}")
+            except Exception as e:
+                self.status_bar.showMessage(f"Error loading {file_path.name}: {str(e)}")
 
     
