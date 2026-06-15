@@ -1,17 +1,10 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QListWidget, QSplitter, QLabel, QTreeView, QDockWidget, QFileSystemModel
-from PySide6.QtCore import Qt, QDir
-
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeView, QFileSystemModel, QPushButton
+from PySide6.QtCore import QDir
 
 #Other imports
 from pathlib import Path
 
-
-#This file contains the base parent class for the left widgets (which deal with info and options) that will sit on left panel of the main window.
-#Each widget will inherit from this class, and will be responsible for displaying the relevant information and options depending on its context.
-
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-from PySide6.QtCore import Qt
 
 class BaseLeftPanelWidget(QWidget):
     """The parent class for all left-panel tools. Provides a header and a close button."""
@@ -105,9 +98,20 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
 
     def _on_double_clicked(self, index):
         """FileTree focus the double clicked directory, without overwriting self.current_data_folder, so refresh still resets main view."""
-        #Useful for navigating more comple data folders without relying on pure FileTree format
+        #Useful for navigating more complex data folders without relying on pure FileTree format
 
-        pass
+        click_path = self.model.filePath(index)
+
+        if not Path(click_path).is_dir():
+            return
+        
+        self.model.setRootPath('') #Clear model's cache
+
+        self.model.setRootPath(click_path)
+        self.file_tree_view.setRootIndex(self.model.index(click_path))
+
+        self.show()
+
         
 
     def refresh(self, data_folder: str| Path):

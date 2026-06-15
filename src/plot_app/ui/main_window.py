@@ -1,6 +1,6 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QListWidget, QSplitter, QLabel, QTreeView, QDockWidget, QFileSystemModel
-from PySide6.QtCore import Qt, QDir
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter
+from PySide6.QtCore import Qt
 
 #Importing our own modules
 from core.project_manager import ProjectManager
