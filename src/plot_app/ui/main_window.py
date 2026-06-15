@@ -146,9 +146,9 @@ class MainWindow(QMainWindow):
                 if skip_all:
                     return  # Do nothing, just return
                 
-                if not self.replace_all:
+                if not replace_all:
                     # Pop the dialog! (This pauses the script until they click)
-                    dialog = FileConflictDialog(Path(src).name, self.ui)
+                    dialog = FileConflictDialog(Path(src).name, self)
                     dialog.exec()
                     
                     # Process their decision
@@ -221,9 +221,6 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage(f"Plotted: {file_path.name}")
             except Exception as e:
                 self.status_bar.showMessage(f"Error loading {file_path.name}: {str(e)}")
-
-
-
 
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
