@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
             self.file_tree = DataFolderTreeWidget()
             self.left_layout.addWidget(self.file_tree)
             self.file_tree.refresh(Path(folder)/'DF')
-            self.file_tree.file_clicked.connect(_on_tree_file_clicked)
+            self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
         else:
             self.status_bar.showMessage("Failed to create project.")
 
