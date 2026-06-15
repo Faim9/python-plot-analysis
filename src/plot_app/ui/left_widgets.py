@@ -1,6 +1,6 @@
 #Importing Pyside6 modules
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeView, QFileSystemModel, QPushButton
-from PySide6.QtCore import QDir
+from PySide6.QtCore import QDir, Signal
 
 #Other imports
 from pathlib import Path
@@ -15,7 +15,6 @@ class BaseLeftPanelWidget(QWidget):
         # 1. Master Layout (Vertical - stacks top to bottom)
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(5, 5, 5, 5)
-
         
         # 2. THE HEADER ROW (Horizontal)
         self.header_layout = QHBoxLayout()
@@ -51,6 +50,9 @@ class BaseLeftPanelWidget(QWidget):
 
 
 class DataFolderTreeWidget(BaseLeftPanelWidget):
+
+    file_clicked = Signal(Path, str) #We give the path clicked and which panel was clicked on. In the future to differentiate between DF and AF files
+
     def __init__(self, parent=None):
         # 1. Call the parent's init, and pass the title!
         super().__init__(title_text="Data Folder:", parent=parent)
@@ -89,10 +91,8 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
 
     def _on_clicked(self, index):
 
-        click_path = Path(self.model.filePath(index))
+        self.file_clicked.emit(Path(self.model.filePath(index)), 'DF')
 
-        if click_path.is_dir():
-            return
         
 
 

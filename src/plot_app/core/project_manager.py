@@ -9,11 +9,12 @@ class ProjectManager:
 
     def _is_folder_valid_project(self, folder_path: str | Path) -> bool:
         """Checks if the given folder has the necessary structure to be considered a valid project."""
-        # For a folder to be a valid project, it only needs the .other/project_config.json file
+        # For a folder to be a valid project, it needs the .other/project_config.json file and the /DF directory
         pf_path = Path(folder_path)
         config_path = pf_path / ".other" / "project_config.json"
+        DF_path = pf_path / "DF"
 
-        return pf_path.exists() and config_path.exists()
+        return pf_path.exists() and config_path.exists() and DF_path.exists()
 
     def create_new_project(self, target_folder: str | Path) -> bool:
         """Generates the PF, DF, and AF tree for a brand-new project."""

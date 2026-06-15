@@ -4,16 +4,19 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 class PlotCanvas(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.plotlayout = QVBoxLayout(self)
+        self.plotlayout.setContentsMargins(0, 0, 0, 0)
+        self.setMinimumSize(500,500) #Width, Height
         
         self.plot_widget = pg.PlotWidget()
-        self.layout.addWidget(self.plot_widget)
+        self.plot_widget.setBackground('w')
+        self.plotlayout.addWidget(self.plot_widget)
         
         self.plot_item = self.plot_widget.getPlotItem()
         self.plot_item.showGrid(x=True, y=True, alpha=0.3)
         self.plot_item.setLabel('left', 'Y Axis')
         self.plot_item.setLabel('bottom', 'X Axis')
+        
         
         self.current_curve = None
 

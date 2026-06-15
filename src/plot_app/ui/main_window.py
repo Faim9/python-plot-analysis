@@ -27,13 +27,11 @@ class MainWindow(QMainWindow):
         self._setup_central_widget()
         self._setup_status_bar()
         
-        # 3. Connect buttons to functions (Signals & Slots)
-        #self._connect_signals()
 
     def _setup_window(self):
         """Configures the main window's size, title, and base settings."""
         self.setWindowTitle("Plot App")
-        self.setGeometry(100, 100, 1000, 750)
+        self.setGeometry(0, 0, 1000, 750)
 
     def _setup_menubar(self):
         """Creates the menubar and its actions."""
@@ -54,11 +52,11 @@ class MainWindow(QMainWindow):
         # 2. ---View menu---
         view_menu = menubar.addMenu("View")
 
-    
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
-        self.toolbar = self.addToolBar("Toolbar")
+        #self.toolbar = self.addToolBar("Toolbar")
 
+        pass
         
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
@@ -71,13 +69,16 @@ class MainWindow(QMainWindow):
 
         # --- 1. Create the Splitter ---
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.splitter.setChildrenCollapsible(False) #Collapsing either side is now impossible
         self.main_layout.addWidget(self.splitter)
 
         # --- 2. Create the Left Panel---
         self.left_panel = QWidget()
+        self.left_panel.setMinimumSize(50,100) #Width, Height
         self.left_layout = QVBoxLayout(self.left_panel)
         self.left_layout.setContentsMargins(0, 0, 0, 0)
-
+        
+        
         # --- 3. Create the Right Panel (Plots) ---
         self.right_panel = QWidget()
         self.right_layout = QVBoxLayout(self.right_panel)
@@ -99,10 +100,6 @@ class MainWindow(QMainWindow):
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Ready. Create a new project or open an existing one.")
 
-    def _connect_signals(self):
-        """Connects UI events (clicks, text changes) to logic functions."""
-        self.file_tree_view.clicked.connect(self.on_file_selected)
-
 
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
@@ -122,18 +119,13 @@ class MainWindow(QMainWindow):
             self.file_tree = DataFolderTreeWidget()
             self.left_layout.addWidget(self.file_tree)
             self.file_tree.refresh(Path(folder)/'DF')
+            self.file_tree.file_clicked.connect(_on_tree_file_clicked)
         else:
             self.status_bar.showMessage("Failed to create project.")
 
     def open_project(self):
         """Handles loading an existing project."""
         folder = QFileDialog.getExistingDirectory(self, "Select Project Folder")
-
-        valid_project_folder = self.project_manager._is_folder_valid_project(folder)
-
-        if not valid_project_folder:
-            self.status_bar.showMessage("Selected folder is not a valid project folder. Please select a correct project folder or Create a new project.")
-            return
 
         success = self.project_manager.load_project(folder)
 
@@ -142,6 +134,7 @@ class MainWindow(QMainWindow):
             self.file_tree = DataFolderTreeWidget()
             self.left_layout.addWidget(self.file_tree)
             self.file_tree.refresh(Path(folder)/'DF')
+            self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
         else:
             self.status_bar.showMessage("Failed to load project.")
 
@@ -161,25 +154,20 @@ class MainWindow(QMainWindow):
         else:
             self.status_bar.showMessage("No project loaded to save configs.")
 
-    def on_file_selected(self, index):
+    def _on_tree_file_clicked(self, file_path: Path, file_tree_object: str):
         """Triggered when a file is clicked in the list. Loads the data and updates the plot."""
         #Some checks first
         if not self.project_manager.is_project_loaded:
             return
 
-        #Get the path of the selected file from the model using the index
-        file_path = Path(self.file_system_model.filePath(index))
-
         #If it's a directory, ignore the click (we only want to plot files)
         if file_path.is_dir():
             return
-
-        #Get the data folder path from the project config to construct the full path to the file
-        data_folder_str = self.project_manager.active_project_path #type: ignore
         
-        if not data_folder_str:
-            self.status_bar.showMessage("Data folder not set in project config.")
-            return
+        if file_path.suffix == '.dat' and file_tree_object == 'DF': #Hand to Plot_canvas
+
+            #self.plot_canvas.plot_file(file_path) Implement this in plot_canvas class
+            pass
             
         filename = file_path.name 
 
