@@ -69,10 +69,10 @@ class ProjectConfig(ConfigManager):
             "plot_prefs": {
                 "line_width": 2.0,
                 "scatter_size": 5,
-                "theme": "light"},
-            "column_mapping": {
-                "x_col": 0,
-                "y_col": 1},
+                "theme": "light",
+                "column_mapping": {
+                    "x_col": 0,
+                    "y_col": 1}}
             }
 
         self.fallback_config = FALLBACK_CONFIG
