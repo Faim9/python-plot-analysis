@@ -22,10 +22,9 @@ class PlotCanvas(QWidget):
         self.plot_widget.setBackground('w')
         self.plotlayout.addWidget(self.plot_widget)
         
-        self.plot_item = self.plot_widget.getPlotItem()
-        self.plot_item.showGrid(x=True, y=True, alpha=1)
-        self.plot_item.setLabel('left', 'Y Axis')
-        self.plot_item.setLabel('bottom', 'X Axis')
+        self.plot_widget.showGrid(x=True, y=True, alpha=1) 
+        self.plot_widget.setLabel('left', 'Y Axis')
+        self.plot_widget.setLabel('bottom', 'X Axis')
         
         
         self.current_curve = None
@@ -36,8 +35,8 @@ class PlotCanvas(QWidget):
     def plot_file(self, file_path: Path, plot_prefs: dict ={}):
         """Clears the canvas and plots new X/Y arrays using project preferences."""
 
-        self.plot_item.clear()
-        self.plot_item.setTitle(file_path.name)
+        self.plot_widget.clear()
+        self.plot_widget.setTitle(file_path.name)
 
         # --- 1. Read Data ---
 
@@ -67,7 +66,7 @@ class PlotCanvas(QWidget):
         # --- 4. Draw the Plot ---
         pen = pg.mkPen(color=line_color, width=lw)
         
-        self.current_curve = self.plot_item.plot(
+        self.current_curve = self.plot_widget.plot(
             x_data, y_data, 
             pen=pen, 
             symbol='o', 
