@@ -1,0 +1,87 @@
+/* This may need to be broken into different .qss files, once the app keeps getting bigger.
+For now, let's keep it one big file of settings, and in the future separate it as needed (like, buttons.qss, windows.qss ...)*/
+
+
+/* ---------------------------------------
+   1. MAIN WINDOW & GLOBAL PANELS
+--------------------------------------- */
+QMainWindow {
+    background-color: #1e1e1e; /* Dark grey background */
+}
+
+/* This targets all standard empty panels, like your left layout container */
+QWidget {
+    color: #e0e0e0; /* Default text color */
+}
+
+/* ---------------------------------------
+   2. BUTTONS & HOVER STATES
+--------------------------------------- */
+QPushButton {
+    background-color: #333333;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 4px;      /* Rounded corners! */
+    padding: 6px 12px;
+}
+
+/* When the mouse hovers over the button */
+QPushButton:hover {
+    background-color: #4a4a4a;
+    border: 1px solid #888888;
+}
+
+/* When the button is actively being clicked */
+QPushButton:pressed {
+    background-color: #007acc; /* Highlight blue */
+    border: 1px solid #005f9e;
+}
+
+/* ---------------------------------------
+   3. MENU BAR (Top Row)
+--------------------------------------- */
+QMenuBar {
+    background-color: #2d2d2d;
+    color: #ffffff;
+}
+
+/* When hovering over 'File' or 'Edit' */
+QMenuBar::item:selected {
+    background-color: #444444;
+}
+
+/* ---------------------------------------
+   4. DROPDOWN MENUS (The Sub-Menus)
+--------------------------------------- */
+QMenu {
+    background-color: #252526;
+    color: #cccccc;
+    border: 1px solid #3e3e42;
+}
+
+/* When hovering over an item in the dropdown */
+QMenu::item:selected {
+    background-color: #007acc; /* Blue highlight */
+    color: #ffffff;
+}
+
+/* ---------------------------------------
+   5. THE FILE TREE (QTreeView)
+--------------------------------------- */
+QTreeView {
+    background-color: #252526;
+    color: #cccccc;
+    border: 1px solid #333333;
+    alternate-background-color: #2a2a2b; /* For alternating row colors */
+}
+
+/* Hovering over a file */
+QTreeView::item:hover {
+    background-color: #2a2d2e;
+}
+
+/* Clicking a file */
+QTreeView::item:selected {
+    background-color: #007acc;
+    color: white;
+}

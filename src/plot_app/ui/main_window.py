@@ -1,5 +1,5 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication
 from PySide6.QtCore import Qt
 
 #Importing our own modules
@@ -28,7 +28,9 @@ class MainWindow(QMainWindow):
         self._setup_toolbar()
         self._setup_central_widget()
         self._setup_status_bar()
-        
+
+        #Set theme
+        self._handle_theme_change('dark.qss')
 
     def _setup_window(self):
         """Configures the main window's size, title, and base settings."""
@@ -222,6 +224,27 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.status_bar.showMessage(f"Error loading {file_path.name}: {str(e)}")
 
+    def _handle_theme_change(self, theme_name:str):
+
+        theme_file_path = Path(__file__).parent.parent / 'assets' / 'app_themes' / theme_name
+        print(theme_file_path)
+
+        if theme_file_path.exists():
+
+            try:
+                with open(theme_file_path,'r') as theme:
+                    qss_string = theme.read()
+                
+                app = QApplication.instance()
+                app.setStyleSheet(qss_string)
+
+            except Exception as e:
+                self.status_bar.showMessage(f'Failed to set theme: {e}.')
+                return
+            
+        else: 
+            self.status_bar.showMessage(f'The theme {theme_name} is not recognised.') 
+            return
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
     # -------------------------------------------------------------------------
