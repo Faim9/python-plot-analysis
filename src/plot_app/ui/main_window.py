@@ -12,10 +12,16 @@ from utils.file_ops import get_safe_path_destination
 #Other imports
 from pathlib import Path
 from shutil import copy2, copytree
+import logging
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self,log_window):
         super().__init__()
+
+        #Save log window so we can show on demand
+        self.log_window = log_window
+
+        self.app_logger = logging.getLogger('AppLogger')
         
         # Initialize the project manager
         self.project_manager = ProjectManager()
@@ -62,6 +68,9 @@ class MainWindow(QMainWindow):
 
         # 2. ---View menu---
         view_menu = menubar.addMenu("View")
+
+        view_log_window_action = view_menu.addAction('Log window')
+        view_log_window_action.triggered.connect(self.log_window.show)
 
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
@@ -110,6 +119,8 @@ class MainWindow(QMainWindow):
         """Initializes the status bar for displaying messages."""
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Ready. Create a new project or open an existing one.")
+        self.app_logger.info("Application initiated. Ready to open or create a project.")
+        
 
     # -------------------------------------------------------------------------
     # Connecting signals and logic
@@ -120,6 +131,7 @@ class MainWindow(QMainWindow):
 
         if not self.project_manager.is_project_loaded:
             self.status_bar.showMessage(f"Error. Project not loaded yet. Open or create a new one to import data.")
+            self.app_logger.warning(f'Project not loaded yet. Open or create a new one to import data.')
             return
         
         imported_directory = QFileDialog.getExistingDirectory(self, "Select folder or file to import")
@@ -129,6 +141,7 @@ class MainWindow(QMainWindow):
         aimed_directory = self.project_manager.active_project_path / 'DF' / source_folder.name
 
         self.status_bar.showMessage(f'Importing {imported_directory} whole structure and files to {aimed_directory}')
+        self.app_logger.info(f'Importing {imported_directory} whole structure and files to {aimed_directory}')
 
         # State variables for the import
         skip_all = False
@@ -227,7 +240,7 @@ class MainWindow(QMainWindow):
     def _handle_theme_change(self, theme_name:str):
 
         theme_file_path = Path(__file__).parent.parent / 'assets' / 'app_themes' / theme_name
-        print(theme_file_path)
+        self.app_logger.debug(f'Setting {theme_name} theme.')
 
         if theme_file_path.exists():
 
@@ -240,10 +253,12 @@ class MainWindow(QMainWindow):
 
             except Exception as e:
                 self.status_bar.showMessage(f'Failed to set theme: {e}.')
+                self.app_logger.exception(f'Failed to set the theme: {str(e)}')
                 return
             
         else: 
             self.status_bar.showMessage(f'The theme {theme_name} is not recognised.') 
+            self.app_logger.error(f'The theme {theme_name} is not recognised.')
             return
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
@@ -275,13 +290,15 @@ class MainWindow(QMainWindow):
 
         if success:
             self.status_bar.showMessage(f"Project loaded from: {folder}")
+            self.app_logger.info(f"Project loaded from: {folder}")
             self.file_tree = DataFolderTreeWidget()
             self.left_layout.addWidget(self.file_tree)
             self.file_tree.refresh(Path(folder)/'DF')
             self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
         else:
             self.status_bar.showMessage("Failed to load project.")
-
+            self.app_logger.error("Failed to load project.")
+            
     def save_project(self):
         """Saves the current project settings."""
         if self.project_manager.project_config:
