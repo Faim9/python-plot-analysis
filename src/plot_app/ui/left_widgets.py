@@ -29,6 +29,10 @@ class BaseLeftPanelWidget(QWidget):
         self.refresh_btn = QPushButton('↻')
         self.refresh_btn.setFixedSize(20,20)
         self.refresh_btn.hide() #Start button hidden, and not connected to signals, as it is a placeholder for now.
+        
+        #Styling buttons
+        self.close_btn.setProperty("cssClass", "icon-btn")
+        self.refresh_btn.setProperty("cssClass", "icon-btn")
 
         # Pack the Header Box
         self.header_layout.addWidget(self.title_label)

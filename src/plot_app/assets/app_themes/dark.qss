@@ -25,6 +25,10 @@ QPushButton {
     padding: 6px 12px;
 }
 
+QPushButton[cssClass="icon-btn"] {
+    padding: 0px;
+}
+
 /* When the mouse hovers over the button */
 QPushButton:hover {
     background-color: #4a4a4a;
@@ -72,7 +76,6 @@ QTreeView {
     background-color: #252526;
     color: #cccccc;
     border: 1px solid #333333;
-    alternate-background-color: #2a2a2b; /* For alternating row colors */
 }
 
 /* Hovering over a file */
