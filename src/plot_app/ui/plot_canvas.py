@@ -28,12 +28,16 @@ class PlotCanvas(QWidget):
         
         
         self.current_curve = None
+        self.current_file_name = None
 
         #Enable antialiasing for smoother lines
         pg.setConfigOptions(antialias=True)
 
     def plot_file(self, file_path: Path, plot_prefs: dict ={}):
         """Clears the canvas and plots new X/Y arrays using project preferences."""
+
+        if file_path.name == self.current_file_name: #The file is already plotted so we should return early
+            return
 
         self.plot_widget.clear()
         self.plot_widget.setTitle(file_path.name)
@@ -73,3 +77,5 @@ class PlotCanvas(QWidget):
             symbolSize=sz, 
             symbolBrush=line_color
         )
+
+        self.current_file_name = file_path.name
