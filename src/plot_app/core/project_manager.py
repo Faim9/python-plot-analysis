@@ -1,6 +1,6 @@
 from pathlib import Path
 from core.config_manager import ProjectConfig
-from utils.file_ops import get_safe_path_destination
+from utils.file_ops import get_safe_path_destination, extract_path
 import logging
 from shutil import copy2, copytree
 from ui.dialogs import FileConflictDialog
@@ -102,7 +102,7 @@ class ProjectManager:
 
                 if not replace_all:
                     # Pop the dialog! (This pauses the script until they click)
-                    conflict_message = f'The file {Path(src).name} already exists in {Path(dst).parent}. What to do?'
+                    conflict_message = f'The file {Path(src).name} already exists in {extract_path(Path(dst),'DF')}. What to do?'
                     dialog = FileConflictDialog(conflict_message,options = ["Cancel","Skip all", "Skip","Rename", "Rename all", "Replace", "Replace all"])
                     dialog.exec()
                     
@@ -146,7 +146,6 @@ class ProjectManager:
             else: self.app_logger.info(f'Import sucess.')
         except Exception as e:
             self.app_logger.exception(f'Error during folder import: {e}.')
-
 
     def import_files(self, imported_files: list) -> None:
         '''Import files .dat to the Data Folder, /DF'''

@@ -49,3 +49,22 @@ def get_safe_path_destination(proposed_path: Path) -> Path:
                 
             # If _v1 is also taken, loop again and try _v2
             counter += 1
+
+def extract_path(full_path: Path, folder:str) -> Path | None:
+    """Extracts 'folder/...' from a path, regardless of how deep it is."""
+    
+    # 1. Break the path into a tuple of strings
+    # Example: ('C:\\', 'Users', 'App', 'Projects', 'DF', 'Day_1', 'data.dat')
+    parts = full_path.parts
+    
+    # 2. Safety check: Make sure the path actually exists in the full path
+    if folder in parts:
+        # 3. Find the exact index of 'DF'
+        path_index = parts.index(folder)
+        
+        # 4. Slice the tuple from the path to the end, and unpack (*) it back into a Path
+        sliced_path = Path(*parts[path_index:])
+        
+        return sliced_path
+    else:
+        return None
