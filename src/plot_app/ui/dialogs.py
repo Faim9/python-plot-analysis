@@ -1,47 +1,37 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
 
 class FileConflictDialog(QDialog):
     '''Conflict dialog for import folder function'''
 
-    def __init__(self, filename, parent=None):
+    def __init__(self, conflict_message:str, parent=None, options = None):
         super().__init__(parent)
+
+        if not options:
+            options = ['Cancel']
+
         self.setWindowTitle("File Conflict")
         # Removes the "?" help button on Windows for a cleaner look
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
         
         # This will hold the user's final decision
-        self.decision = "cancel" 
+        self.decision = "Cancel" 
 
         # --- UI Setup ---
         layout = QVBoxLayout(self)
-        msg = QLabel(f"The file <b>'{filename}'</b> already exists in this folder.<br>What would you like to do?")
+        msg = QLabel(conflict_message)
         layout.addWidget(msg)
 
-        btn_layout = QHBoxLayout()
-        
-        # Create buttons
-        self.btn_replace = QPushButton("Replace")
-        self.btn_replace_all = QPushButton("Replace All")
-        self.btn_skip = QPushButton("Skip")
-        self.btn_skip_all = QPushButton("Skip All")
-        self.btn_cancel = QPushButton("Cancel Import")
-        
-        # Add buttons to layout
-        btn_layout.addWidget(self.btn_replace)
-        btn_layout.addWidget(self.btn_replace_all)
-        btn_layout.addWidget(self.btn_skip)
-        btn_layout.addWidget(self.btn_skip_all)
-        btn_layout.addWidget(self.btn_cancel)
-        layout.addLayout(btn_layout)
+        self.btn_layout = QHBoxLayout()
 
-        # --- Wiring the buttons ---
-        # When a button is clicked, lambda sets our decision variable and closes the window
-        self.btn_replace.clicked.connect(lambda: self._close_with("replace"))
-        self.btn_replace_all.clicked.connect(lambda: self._close_with("replace_all"))
-        self.btn_skip.clicked.connect(lambda: self._close_with("skip"))
-        self.btn_skip_all.clicked.connect(lambda: self._close_with("skip_all"))
-        self.btn_cancel.clicked.connect(lambda: self._close_with("cancel"))
+        for button in options:
+            str_button = str(button) #Make sure it's a string
+            btn = QPushButton(str_button) #Create the button
+            btn.clicked.connect(lambda checked=False, decision= str_button: self._close_with(decision)) #Wire it; checked_var absorfs a bool that .clicked sends; decision_var snapshots the str_button var.
+            self.btn_layout.addWidget(btn) #Add button to layout
+
+        #Set button layout
+        layout.addLayout(self.btn_layout)
 
     def _close_with(self, decision_string):
         self.decision = decision_string

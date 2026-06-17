@@ -135,90 +135,52 @@ class MainWindow(QMainWindow):
             return
         
         imported_directory = QFileDialog.getExistingDirectory(self, "Select folder or file to import")
-        if not imported_directory: return
+        if not imported_directory: 
+            self.app_logger.debug(f'No directory.')
+            return
 
         source_folder = Path(imported_directory)
-        aimed_directory = self.project_manager.active_project_path / 'DF' / source_folder.name
 
-        self.status_bar.showMessage(f'Importing {imported_directory} whole structure and files to {aimed_directory}')
-        self.app_logger.info(f'Importing {imported_directory} whole structure and files to {aimed_directory}')
+        self.status_bar.showMessage(f'Importing {imported_directory} whole structure and files to /DF.')
+        self.app_logger.info(f'Importing {imported_directory} whole structure and files to /DF.')
 
-        # State variables for the import
-        skip_all = False
-        replace_all = False
-        import_cancelled = False
+        self.project_manager.import_folder(source_folder)
 
-        # --- THE INTERCEPTOR ---
-        def smart_copy(src, dst):
-            nonlocal skip_all,replace_all,import_cancelled
-
-            # If the user previously clicked cancel, immediately abort further copies
-            if import_cancelled:
-                return 
-
-            # Check if there is a collision
-            if Path(dst).exists():
-                if skip_all:
-                    return  # Do nothing, just return
-                
-                if not replace_all:
-                    # Pop the dialog! (This pauses the script until they click)
-                    dialog = FileConflictDialog(Path(src).name, self)
-                    dialog.exec()
-                    
-                    # Process their decision
-                    if dialog.decision == "cancel":
-                        import_cancelled = True
-                        return
-                    elif dialog.decision == "skip_all":
-                        skip_all = True
-                        return
-                    elif dialog.decision == "skip":
-                        return
-                    elif dialog.decision == "replace_all":
-                        replace_all = True
-                    # If it's "replace", we just let it fall through to the copy function below
-            
-            # If we reach here, it's safe to overwrite or the file is new
-            copy2(src, dst)
-
-
-        try:
-            copytree(imported_directory,aimed_directory, dirs_exist_ok=True,copy_function=smart_copy)
-            if import_cancelled:
-                self.status_bar.showMessage(f'Import canceled.')
-            else: self.status_bar.showMessage(f'Import sucess.')
-        except Exception as e:
-            self.status_bar.showMessage(f'Error during folder import: {e}.')
+        
 
     def _import_files(self):
         '''Import files .dat to the Data Folder, /DF'''
         
+        #Check project loaded
         if not self.project_manager.is_project_loaded:
             self.status_bar.showMessage(f"Error. Project not loaded yet. Open or create a new one to import data.")
+            self.app_logger.error(f'Project not loaded yet. Open or create a new one to import data.')
             return
         
+        #Select files
         imported_files, _ = QFileDialog.getOpenFileNames(self, 'Import Files', filter= 'Data Files (*.dat);;All Files (*.*)')
 
+        #Check files
         if not imported_files:
             self.status_bar.showMessage(f'No files selected to import.')
+            self.app_logger.info(f'No files selected to import. Aborting.')
             return
+        
 
-        aimed_directory = self.project_manager.active_project_path / 'DF'
+        self.status_bar.showMessage(f'Importing {len(imported_files)} files.')
 
-        self.status_bar.showMessage(f'Importing {len(imported_files)} to {aimed_directory}')
+        #Import files
+        num_files_failed= self.project_manager.import_files(imported_files)
+        num_files = len(imported_files)
 
-        #2. Safely copy each file
-        for file_path_str in imported_files:
-            source_file = Path(file_path_str)
-            intended_destination_file = aimed_directory / source_file.name
-            destination_file = get_safe_path_destination(intended_destination_file)
-            
-            try:
-                # Copy the file and preserve its metadata
-                copy2(source_file, destination_file)
-            except Exception as e:
-                self.status_bar.showMessage(f"Error copying {source_file.name}: {e}")
+        #Handle messages
+        if num_files_failed:
+            self.status_bar.showMessage(f'Successfully imported {num_files-num_files_failed}/{num_files} files. Check log for ones failed.')
+            self.app_logger.info(f'Successfully imported {num_files-num_files_failed}/{num_files} files to /DF.')
+            return
+        
+        self.status_bar.showMessage(f'Successfully imported {num_files} files.')
+        self.app_logger.info(f'Successfully imported {num_files-num_files_failed}/{num_files} files to /DF.')
 
     def _on_tree_file_clicked(self, file_path: Path, file_tree_object: str):
         """Triggered when a file is clicked in a File Tree View. It hands the file path to the appropriate object (ex: data folder files are handed to plot_canvas)"""
@@ -232,7 +194,7 @@ class MainWindow(QMainWindow):
         
         if file_path.suffix == '.dat' and file_tree_object == 'DF': #Hand to Plot_canvas
             try:
-                self.plot_canvas.plot_file(file_path, self.project_manager.project_config['plot_prefs']) 
+                self.plot_canvas.plot_file(file_path, self.project_manager.project_config['plot_prefs'])  #type:ignore
                 self.status_bar.showMessage(f"Plotted: {file_path.name}")
             except Exception as e:
                 self.status_bar.showMessage(f"Error loading {file_path.name}: {str(e)}")
@@ -249,7 +211,7 @@ class MainWindow(QMainWindow):
                     qss_string = theme.read()
                 
                 app = QApplication.instance()
-                app.setStyleSheet(qss_string)
+                app.setStyleSheet(qss_string) #type: ignore
 
             except Exception as e:
                 self.status_bar.showMessage(f'Failed to set theme: {e}.')
