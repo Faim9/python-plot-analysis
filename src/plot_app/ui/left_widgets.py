@@ -4,6 +4,7 @@ from PySide6.QtCore import QDir, Signal
 
 #Other imports
 from pathlib import Path
+from utils.file_ops import extract_path
 
 
 class BaseLeftPanelWidget(QWidget):
@@ -59,7 +60,7 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
 
     def __init__(self, parent=None):
         # 1. Call the parent's init, and pass the title!
-        super().__init__(title_text="Data Folder:", parent=parent)
+        super().__init__(title_text="DF", parent=parent)
         
         # 2. Create the FileSystemModel
         self.model = QFileSystemModel()
@@ -80,10 +81,20 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         self.refresh_btn.show()
         self.refresh_btn.clicked.connect(self._on_refresh_clicked)
         self.current_data_folder = None #Later give the widget the data folder path to its memory, so refreshing is cleaner
+        self.current_directory = None
+
+        #Create back button
+        self.back_btn = QPushButton('↑')
+        self.back_btn.setFixedSize(20,20)
+        self.back_btn.setProperty("cssClass", "icon-btn")
+        self.back_btn.clicked.connect(self._on_back_clicked)
+        self.header_layout.insertWidget(2,self.back_btn)
+        
+        
 
         # 5. Handle file selection and double click
-        self.file_tree_view.clicked.connect(self._on_clicked)
-        self.file_tree_view.doubleClicked.connect(self._on_double_clicked)
+        self.file_tree_view.clicked.connect(self._on_file_clicked)
+        self.file_tree_view.doubleClicked.connect(self._on_folder_double_clicked)
 
         # 4. Add the tree to the inherited content area
         self.content_layout.addWidget(self.file_tree_view)
@@ -91,42 +102,52 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
     def _on_refresh_clicked(self):
         """Triggered by the refresh button. Uses internal widget saved data folder path"""
         if self.current_data_folder is not None:
-            self.refresh(self.current_data_folder)
+            self.refresh()
 
-    def _on_clicked(self, index):
+    def _on_file_clicked(self, index):
 
         self.file_clicked.emit(Path(self.model.filePath(index)), 'DF')
 
         
+    def _on_back_clicked(self):
 
+        if self.current_directory == self.current_data_folder:
+            return
+        
+        else:
+            index = self.model.index(str(self.current_directory.parent))
+            self._on_folder_double_clicked(index)
 
-    def _on_double_clicked(self, index):
+    def _on_folder_double_clicked(self, index):
         """FileTree focus the double clicked directory, without overwriting self.current_data_folder, so refresh still resets main view."""
         #Useful for navigating more complex data folders without relying on pure FileTree format
 
         click_path = self.model.filePath(index)
 
+        path = Path(click_path)
+
         if not Path(click_path).is_dir():
             return
         
+        self.current_directory = path
+
         self.model.setRootPath('') #Clear model's cache
 
         self.model.setRootPath(click_path)
         self.file_tree_view.setRootIndex(self.model.index(click_path))
-
+        self.title_label.setText(str(extract_path(path,'DF')))
         self.show()
 
         
 
-    def refresh(self, data_folder: str| Path):
-        """Clears the list widget and populates it with .dat files from the Data Folder."""
-    
-        if not Path(data_folder).is_dir:
+    def refresh(self):
+        """Clears the list widget and populates it with .dat files from the Data Folder. This is called immedietely when the Tree is initialized in main_window."""
+        if self.current_data_folder is None:
             return
-        self.current_data_folder = data_folder
-
-
-        data_folder_str = str(data_folder)
+        
+        data_folder_str = str(self.current_data_folder)
+        self.current_directory = self.current_data_folder
+        self.title_label.setText("DF")
 
         # Set the model's root path to the Data Folder.
         self.model.setRootPath(data_folder_str)

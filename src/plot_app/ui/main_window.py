@@ -165,22 +165,11 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f'No files selected to import.')
             self.app_logger.info(f'No files selected to import. Aborting.')
             return
-        
 
-        self.status_bar.showMessage(f'Importing {len(imported_files)} files.')
 
         #Import files
-        num_files_failed= self.project_manager.import_files(imported_files)
-        num_files = len(imported_files)
+        self.project_manager.import_files(imported_files)
 
-        #Handle messages
-        if num_files_failed:
-            self.status_bar.showMessage(f'Successfully imported {num_files-num_files_failed}/{num_files} files. Check log for ones failed.')
-            self.app_logger.info(f'Successfully imported {num_files-num_files_failed}/{num_files} files to /DF.')
-            return
-        
-        self.status_bar.showMessage(f'Successfully imported {num_files} files.')
-        self.app_logger.info(f'Successfully imported {num_files-num_files_failed}/{num_files} files to /DF.')
 
     def _on_tree_file_clicked(self, file_path: Path, file_tree_object: str):
         """Triggered when a file is clicked in a File Tree View. It hands the file path to the appropriate object (ex: data folder files are handed to plot_canvas)"""
@@ -239,7 +228,8 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Project created at: {folder}")
             self.file_tree = DataFolderTreeWidget()
             self.left_layout.addWidget(self.file_tree)
-            self.file_tree.refresh(Path(folder)/'DF')
+            self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
+            self.file_tree.refresh()
             self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
         else:
             self.status_bar.showMessage("Failed to create project.")
@@ -255,7 +245,8 @@ class MainWindow(QMainWindow):
             self.app_logger.info(f"Project loaded from: {folder}")
             self.file_tree = DataFolderTreeWidget()
             self.left_layout.addWidget(self.file_tree)
-            self.file_tree.refresh(Path(folder)/'DF')
+            self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
+            self.file_tree.refresh()
             self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
         else:
             self.status_bar.showMessage("Failed to load project.")
