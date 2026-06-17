@@ -115,7 +115,7 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
             return
         
         else:
-            index = self.model.index(str(self.current_directory.parent))
+            index = self.model.index(str(self.current_directory.parent)) #type: ignore
             self._on_folder_double_clicked(index)
 
     def _on_folder_double_clicked(self, index):
