@@ -1,5 +1,5 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget
 from PySide6.QtCore import Qt
 
 #Importing our own modules
@@ -87,33 +87,10 @@ class MainWindow(QMainWindow):
         self.main_layout = QVBoxLayout(self.central_widget)
         self.main_layout.setContentsMargins(5, 5, 5, 5)
 
-        # --- 1. Create the Splitter ---
-        self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
-        self.main_splitter.setChildrenCollapsible(False) #Collapsing either side is now impossible
-        self.main_layout.addWidget(self.main_splitter)
-
-        # --- 2. Create the Left Panel---
-        self.left_panel = QWidget()
-        self.left_panel.setMinimumSize(50,100) #Width, Height
-        self.left_layout = QVBoxLayout(self.left_panel)
-        self.left_layout.setContentsMargins(0, 0, 0, 0)
-        
-        
-        # --- 3. Create the Right Panel (Plots) ---
-        self.right_panel = QWidget()
-        self.right_layout = QVBoxLayout(self.right_panel)
-        self.right_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Add the PlotCanvas to the right panel
+        # Add the PlotCanvas to the main panel
         self.plot_canvas = PlotCanvas()
-        self.right_layout.addWidget(self.plot_canvas)
+        self.main_layout.addWidget(self.plot_canvas)
 
-        # --- 4. Add Panels to the Splitter ---
-        self.main_splitter.addWidget(self.left_panel)
-        self.main_splitter.addWidget(self.right_panel)
-
-        # --- 5. Set Initial Proportions (25% left, 75% right) ---
-        self.main_splitter.setSizes([250, 750])
     
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
@@ -227,7 +204,6 @@ class MainWindow(QMainWindow):
         if success:
             self.status_bar.showMessage(f"Project created at: {folder}")
             self.file_tree = DataFolderTreeWidget()
-            self.left_layout.addWidget(self.file_tree)
             self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
             self.file_tree.refresh()
             self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
@@ -243,11 +219,17 @@ class MainWindow(QMainWindow):
         if success:
             self.status_bar.showMessage(f"Project loaded from: {folder}")
             self.app_logger.info(f"Project loaded from: {folder}")
+
             self.file_tree = DataFolderTreeWidget()
-            self.left_layout.addWidget(self.file_tree)
             self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
             self.file_tree.refresh()
             self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
+            self.test_dock = QDockWidget(self)
+            self.test_dock.setTitleBarWidget(self.file_tree.header_widget)
+            self.test_dock.setWidget(self.file_tree)
+            self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.test_dock)
+            self.file_tree.close_requested.connect(self.test_dock.hide)
+            self.test_dock.show()
         else:
             self.status_bar.showMessage("Failed to load project.")
             self.app_logger.error("Failed to load project.")

@@ -9,7 +9,9 @@ from utils.file_ops import extract_path
 
 class BaseLeftPanelWidget(QWidget):
     """The parent class for all left-panel tools. Provides a header and a close button."""
-    
+    close_requested = Signal() #Emit signal to close instead of .hide() for flexibility. 
+    #Example: If the Qwidget is handed to a DockWidget the Dock itself needs to .hide().
+
     def __init__(self, title_text="Panel Title", parent=None):
         super().__init__(parent)
         
@@ -18,14 +20,15 @@ class BaseLeftPanelWidget(QWidget):
         self.main_layout.setContentsMargins(5, 5, 5, 5)
         
         # 2. THE HEADER ROW (Horizontal)
-        self.header_layout = QHBoxLayout()
-        
         # Create Header Widgets, label, close and refresh button.
+        self.header_widget = QWidget()
+        self.header_layout = QHBoxLayout(self.header_widget)
+        self.header_layout.setContentsMargins(5,5,5,5)
         self.title_label = QLabel(f"<b>{title_text}</b>")
         
         self.close_btn = QPushButton("X")
         self.close_btn.setFixedSize(20, 20)  # Keep the button small and square
-        self.close_btn.clicked.connect(self.hide)  # Automatically hides the widget when clicked!
+        self.close_btn.clicked.connect(self.close_requested.emit)  # Emit close request
 
         self.refresh_btn = QPushButton('↻')
         self.refresh_btn.setFixedSize(20,20)
@@ -41,9 +44,9 @@ class BaseLeftPanelWidget(QWidget):
         self.header_layout.addWidget(self.refresh_btn)
         self.header_layout.addWidget(self.close_btn)
 
-        # Add the Header row into the main layout
-        self.main_layout.addLayout(self.header_layout)
-
+        # Uncomment to add the Header row into the main layout
+        # Leave it if you want to give the header to a dock later.
+        #self.main_layout.addLayout(self.header_layout)
         
         # 3. The Widget itself
         # Initialize an empty layout here. 
