@@ -88,9 +88,9 @@ class MainWindow(QMainWindow):
         self.main_layout.setContentsMargins(5, 5, 5, 5)
 
         # --- 1. Create the Splitter ---
-        self.splitter = QSplitter(Qt.Orientation.Horizontal)
-        self.splitter.setChildrenCollapsible(False) #Collapsing either side is now impossible
-        self.main_layout.addWidget(self.splitter)
+        self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.main_splitter.setChildrenCollapsible(False) #Collapsing either side is now impossible
+        self.main_layout.addWidget(self.main_splitter)
 
         # --- 2. Create the Left Panel---
         self.left_panel = QWidget()
@@ -109,11 +109,11 @@ class MainWindow(QMainWindow):
         self.right_layout.addWidget(self.plot_canvas)
 
         # --- 4. Add Panels to the Splitter ---
-        self.splitter.addWidget(self.left_panel)
-        self.splitter.addWidget(self.right_panel)
+        self.main_splitter.addWidget(self.left_panel)
+        self.main_splitter.addWidget(self.right_panel)
 
         # --- 5. Set Initial Proportions (25% left, 75% right) ---
-        self.splitter.setSizes([250, 750])
+        self.main_splitter.setSizes([250, 750])
     
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
