@@ -6,7 +6,7 @@ import PySide6QtAds as ads
 #Importing our own modules
 from core.project_manager import ProjectManager
 from ui.plot_canvas import PlotCanvas
-from ui.left_widgets import DataFolderTreeWidget
+from ui.left_widgets import DataFolderTreeWidget, PlotOptionsWidget
 from ui.dialogs import FileConflictDialog
 from utils.file_ops import get_safe_path_destination
 
@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
         self.view_DF_button.setProperty("cssClass", "icon-btn")
         self.view_DF_button.setToolTip("Data Folder") #Text shown on hover
         #Signals
-        self.view_DF_button.clicked.connect(self._view_data_folder_clicked)
+        self.view_DF_button.clicked.connect(self._on_view_data_folder_clicked)
         self.view_DF_button_action = self.toolbar.addWidget(self.view_DF_button)
         self.view_DF_button_action.setVisible(False) #Invisible until project is loaded
 
@@ -140,18 +140,39 @@ class MainWindow(QMainWindow):
         self.clear_btn.clicked.connect(lambda: self._handle_canvas_buttons('clear'))
         self.toolbar.addWidget(self.clear_btn)
 
-
-    
     def _setup_central_widget(self):
-        """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
+        """Creates and places all visual widgets into layouts using Dock. File tree, options, etc on the left. Plot canvas on the right."""
         self.dock_manager = ads.CDockManager(self)
 
 
         # Add the PlotCanvas to the main panel
         self.plot_canvas = PlotCanvas()
-        plot_dock = ads.CDockWidget('Plot')
-        plot_dock.setWidget(self.plot_canvas)
-        self.dock_manager.setCentralWidget(plot_dock)
+        self.plot_dock = ads.CDockWidget('Plot')
+        plot_area = self.plot_dock.dockAreaWidget()
+        self.plot_dock.setWidget(self.plot_canvas)
+        self.dock_manager.setCentralWidget(self.plot_dock)
+
+        #Create a Left area for panels
+        left_placeholder = ads.CDockWidget('left_area')
+        left_placeholder.hide()
+        self.left_dock_area = self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea,left_placeholder,plot_area)
+        left_placeholder.closeDockWidget()
+
+        #Create a Right area for panels
+        right_placeholder = ads.CDockWidget('right_area')
+        right_placeholder.hide()
+        self.right_dock_area = self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea,right_placeholder,plot_area)
+        right_placeholder.closeDockWidget()
+
+        #Create the Plot options
+        self.plot_options_widget = PlotOptionsWidget(self.plot_canvas)
+        self.plot_options_dock = ads.CDockWidget("Plot Options")
+        self.plot_options_dock.setFeature(ads.CDockWidget.DockWidgetFeature.CustomCloseHandling, True)
+        self.plot_options_dock.closeRequested.connect(lambda: self.handle_panel_dock_close(self.plot_options_dock))
+        self.plot_options_dock.setWidget(self.plot_options_widget)
+        self.dock_manager.addDockWidget(ads.DockWidgetArea.BottomDockWidgetArea , self.plot_options_dock,self.left_dock_area)
+
+        
     
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
@@ -223,6 +244,7 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage(f"Error loading {file_path.name}: {str(e)}")
 
     def _handle_theme_change(self, theme_name:str):
+        """Changes the theme of the app"""
 
         theme_file_path = Path(__file__).parent.parent / 'assets' / 'app_themes' / theme_name
         self.app_logger.debug(f'Setting {theme_name} theme.')
@@ -246,22 +268,21 @@ class MainWindow(QMainWindow):
             self.app_logger.error(f'The theme {theme_name} is not recognised.')
             return
     
-    def _view_data_folder_clicked(self):
+    def _on_view_data_folder_clicked(self):
+        """Handles the showing of the Data Folder Tree View Dock correctly., upon clicking the toolbar icon."""
+
         if not self.project_manager.is_project_loaded:
             return
         
         self.DF_dock.toggleView(True)
 
-    def handle_DF_dock_close(self):
-        """Handles the closing of the Data Folder Tree View Dock correctly."""
-        
-        if self.DF_dock.isFloating():
-            self.dock_manager.addDockWidget(
-                ads.DockWidgetArea.LeftDockWidgetArea, 
-                self.DF_dock
-            )
+    def handle_panel_dock_close(self,panel):
+        """Handles the closing of any Dock panel correctly."""
 
-        self.DF_dock.closeDockWidget()
+        if panel.isFloating():
+            self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea,panel)
+        
+        panel.closeDockWidget()
 
     def _handle_canvas_buttons(self, button_pressed):
         """Handles the pressing of buttons related to Canvas functions, like switching mouse modes, or clearing the canvas. 
@@ -296,6 +317,7 @@ class MainWindow(QMainWindow):
 
     def new_project(self):
         """Handles the creation of a new project."""
+
         if self.project_manager.is_project_loaded:
             self.status_bar.showMessage(f'Project already opened. Save and close it before creating a new one.')
             self.app_logger.warning(f'Project already opened. Save and close it before creating a new one.')
@@ -350,10 +372,11 @@ class MainWindow(QMainWindow):
                 self.DF_dock = ads.CDockWidget("Data Folder")
                 self.DF_dock.setFeature(ads.CDockWidget.DockWidgetFeature.CustomCloseHandling, True)
                 self.DF_dock.setWidget(self.file_tree)
-                self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.DF_dock)
+                self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.DF_dock,self.left_dock_area)
 
                 # Connect the close request signal from File Tree's close button
-                self.DF_dock.closeRequested.connect(self.handle_DF_dock_close)
+                self.DF_dock.closeRequested.connect(lambda: self.handle_panel_dock_close(self.DF_dock))
+                self.DF_dock.topLevelChanged.connect(self.file_tree.resize_grip.setVisible)
 
                 #Reconnect View Data Folder button
                 self.view_DF_button_action.setVisible(True)
@@ -383,7 +406,7 @@ class MainWindow(QMainWindow):
             self.file_tree.refresh()
 
             #Close File Tree Dock
-            self.handle_DF_dock_close()
+            self.handle_panel_dock_close(self.DF_dock)
             self.view_DF_button_action.setVisible(False)
 
             #Reset Plot Canvas

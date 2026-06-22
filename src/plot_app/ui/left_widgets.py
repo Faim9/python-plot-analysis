@@ -1,5 +1,5 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeView, QFileSystemModel, QPushButton, QSizeGrip
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeView, QFileSystemModel, QPushButton, QSizeGrip, QCheckBox
 from PySide6.QtCore import QDir, Signal, Qt, QEvent
 
 #Other imports
@@ -97,8 +97,6 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         self.back_btn.clicked.connect(self._on_back_clicked)
         self.header_layout.insertWidget(2,self.back_btn)
         
-        
-
         # 5. Handle file selection and double click
         self.file_tree_view.clicked.connect(self._on_file_clicked)
         self.file_tree_view.doubleClicked.connect(self._on_folder_double_clicked)
@@ -145,8 +143,6 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         self.title_label.setText(str(extract_path(path,'DF')))
         self.show()
 
-        
-
     def refresh(self):
         """Clears the file tree and populates it with .dat files from the Data Folder. This is called immedietely when the Tree is initialized in main_window."""
         if self.current_data_folder is None:
@@ -168,6 +164,27 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         # Show Widget
         self.show()
 
+
+class PlotOptionsWidget(BaseLeftPanelWidget):
+
+    def __init__(self, plot_canvas,parent=None):
+        super().__init__(title_text="" , parent=parent)
+
+        self._canvas = plot_canvas
+        self.close_btn.hide() #Dock will handle the button
+        self.main_layout.removeWidget(self.header_widget) #Not needed yet
+
+        # Log scale
+        self.log_x = QCheckBox("Log X")
+        self.log_y = QCheckBox("Log Y")
+        self.log_x.toggled.connect(lambda v: plot_canvas.plot_widget.getPlotItem().setLogMode(x=v))
+        self.log_y.toggled.connect(lambda v: plot_canvas.plot_widget.getPlotItem().setLogMode(y=v))
+
+
+        self.content_layout.addWidget(QLabel("Axis"))
+        self.content_layout.addWidget(self.log_x)
+        self.content_layout.addWidget(self.log_y)
+        self.content_layout.addStretch()
 
 
 
