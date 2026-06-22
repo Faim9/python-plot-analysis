@@ -1,6 +1,7 @@
 #Importing Pyside6 modules
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget, QPushButton
 from PySide6.QtCore import Qt, QTimer
+import PySide6QtAds as ads
 
 #Importing our own modules
 from core.project_manager import ProjectManager
@@ -41,7 +42,7 @@ class MainWindow(QMainWindow):
     def _setup_window(self):
         """Configures the main window's size, title, and base settings."""
         self.setWindowTitle("Plot App")
-        self.setGeometry(0, 0, 1000, 750)
+        self.setGeometry(460, 165, 1000, 750)
 
     def _setup_menubar(self):
         """Creates the menubar and its actions."""
@@ -88,21 +89,17 @@ class MainWindow(QMainWindow):
         self.view_DF_button.clicked.connect(self._view_data_folder_clicked)
 
         self.toolbar.addWidget(self.view_DF_button)
-
-        
+    
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-        
-        # The main layout only exists to hold the splitter
-        self.main_layout = QVBoxLayout(self.central_widget)
-        self.main_layout.setContentsMargins(5, 5, 5, 5)
+        self.dock_manager = ads.CDockManager(self)
+
 
         # Add the PlotCanvas to the main panel
         self.plot_canvas = PlotCanvas()
-        self.main_layout.addWidget(self.plot_canvas)
-
+        plot_dock = ads.CDockWidget('Plot')
+        plot_dock.setWidget(self.plot_canvas)
+        self.dock_manager.setCentralWidget(plot_dock)
     
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
@@ -110,7 +107,6 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Ready. Create a new project or open an existing one.")
         self.app_logger.info("Application initiated. Ready to open or create a project.")
         
-
     # -------------------------------------------------------------------------
     # Connecting signals and logic
     # -------------------------------------------------------------------------
@@ -202,20 +198,19 @@ class MainWindow(QMainWindow):
         if not self.project_manager.is_project_loaded:
             return
         
-        if self.DF_dock.isFloating():
-        # Save geometry before touching anything
-            geom = self.DF_dock.geometry()
-            
-            # Remove and re-add instead of setFloating(False)
-            self.removeDockWidget(self.DF_dock)
-            self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.DF_dock)
-            self.DF_dock.show()
-        else:
-            self.DF_dock.show()
+        self.DF_dock.toggleView(True)
 
     def handle_DF_dock_close(self):
         """Handles the closing of the Data Folder Tree View Dock correctly."""
-        self.DF_dock.hide()
+        
+        if self.DF_dock.isFloating():
+            self.dock_manager.addDockWidget(
+                ads.DockWidgetArea.LeftDockWidgetArea, 
+                self.DF_dock
+            )
+
+        self.DF_dock.closeDockWidget()
+    
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
     # -------------------------------------------------------------------------
@@ -272,18 +267,14 @@ class MainWindow(QMainWindow):
                 self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
 
                 #Initialize a Dock container and give it the File Tree Widget showing the data folder
-                self.DF_dock = QDockWidget('',self)
-                #self.DF_dock.setTitleBarWidget(self.file_tree.header_widget)
+                self.DF_dock = ads.CDockWidget("Data Folder")
+                self.DF_dock.setFeature(ads.CDockWidget.DockWidgetFeature.CustomCloseHandling, True)
                 self.DF_dock.setWidget(self.file_tree)
-                #self.DF_dock.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
-                self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.DF_dock)
+                self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.DF_dock)
 
                 # Connect the close request signal from File Tree's close button
                 self.file_tree.close_requested.connect(self.handle_DF_dock_close)
-                self.DF_dock.topLevelChanged.connect(self.file_tree.resize_grip.setVisible)
-
-                #Show
-                self.DF_dock.show()
+                self.DF_dock.closeRequested.connect(self.handle_DF_dock_close)
 
                 #Reconnect View Data Folder button
                 self.view_DF_dock_window_action.setEnabled(True)

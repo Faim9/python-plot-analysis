@@ -98,7 +98,7 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         
         # Uncomment to add the Header row into the main layout
         # Leave commented if you want to give the header to a dock later.
-        # self.main_layout.insertWidget(0,self.header_widget)
+        self.main_layout.insertWidget(0,self.header_widget)
         
 
         # 5. Handle file selection and double click
