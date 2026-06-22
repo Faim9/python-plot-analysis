@@ -23,8 +23,9 @@ class BaseLeftPanelWidget(QWidget):
         # Create Header Widgets, label, close and refresh button.
         self.header_widget = QWidget()
         self.header_layout = QHBoxLayout(self.header_widget)
-        self.header_layout.setContentsMargins(5,5,5,5)
+        self.header_layout.setContentsMargins(0,0,0,0)
         self.title_label = QLabel(f"<b>{title_text}</b>")
+        self.main_layout.addWidget(self.header_widget)
         
         self.close_btn = QPushButton("X")
         self.close_btn.setFixedSize(20, 20)  # Keep the button small and square
@@ -96,9 +97,6 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         self.back_btn.clicked.connect(self._on_back_clicked)
         self.header_layout.insertWidget(2,self.back_btn)
         
-        # Uncomment to add the Header row into the main layout
-        # Leave commented if you want to give the header to a dock later.
-        self.main_layout.insertWidget(0,self.header_widget)
         
 
         # 5. Handle file selection and double click

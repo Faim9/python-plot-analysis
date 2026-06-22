@@ -83,12 +83,15 @@ class MainWindow(QMainWindow):
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
         self.toolbar = self.addToolBar("Toolbar")
-        self.view_DF_button = QPushButton("DF")
+        self.toolbar.setFixedHeight(30)
+        self.toolbar.setMovable(False)
+        self.view_DF_button = QPushButton("🗂")
         self.view_DF_button.setFixedSize(20,20)
         self.view_DF_button.setProperty("cssClass", "icon-btn")
+        self.view_DF_button.setToolTip("Data Folder")
         self.view_DF_button.clicked.connect(self._view_data_folder_clicked)
-
-        self.toolbar.addWidget(self.view_DF_button)
+        self.view_DF_button_action = self.toolbar.addWidget(self.view_DF_button)
+        self.view_DF_button_action.setVisible(False)
     
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
@@ -253,8 +256,9 @@ class MainWindow(QMainWindow):
             try: # If it's not the first time the user opens a project in current session, the necessary widgets are already loaded.
                 self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
                 self.file_tree.refresh()
-                self.DF_dock.show()
+                self.view_DF_button_action.setVisible(True)
                 self.view_DF_dock_window_action.setEnabled(True)
+                self.view_DF_button.show()
 
                 self.app_logger.debug('Successfully opened Data Folder dock.')
 
@@ -262,6 +266,7 @@ class MainWindow(QMainWindow):
 
                 #Initialize the File Tree
                 self.file_tree = DataFolderTreeWidget()
+                self.file_tree.close_btn.setVisible(False) #hide close button since Dock will handle it
                 self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
                 self.file_tree.refresh()
                 self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
@@ -273,11 +278,11 @@ class MainWindow(QMainWindow):
                 self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.DF_dock)
 
                 # Connect the close request signal from File Tree's close button
-                self.file_tree.close_requested.connect(self.handle_DF_dock_close)
                 self.DF_dock.closeRequested.connect(self.handle_DF_dock_close)
 
                 #Reconnect View Data Folder button
                 self.view_DF_dock_window_action.setEnabled(True)
+                self.view_DF_button_action.setVisible(True)
 
                 #Log
                 self.app_logger.debug('Successfully opened Data Folder dock.')
@@ -306,6 +311,7 @@ class MainWindow(QMainWindow):
             #Close File Tree Dock
             self.handle_DF_dock_close()
             self.view_DF_dock_window_action.setEnabled(False)
+            self.view_DF_button_action.setVisible(False)
 
             #Reset Plot Canvas
             self.plot_canvas.clear_canvas()

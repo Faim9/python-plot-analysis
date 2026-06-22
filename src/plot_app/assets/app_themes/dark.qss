@@ -15,6 +15,102 @@ QWidget {
 }
 
 /* ---------------------------------------
+   QTADS DOCK TITLE BAR
+--------------------------------------- */
+ads--CDockAreaTitleBar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #555555;
+}
+
+ads--CDockAreaFloatingTitleBar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #555555;
+}
+
+/* The buttons (detach, close) */
+ads--CDockAreaTitleBar QAbstractButton {
+    background-color: #333333;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 0px;
+}
+
+ads--CDockAreaTitleBar QAbstractButton:hover {
+    background-color: #4a4a4a;
+    border: 1px solid #888888;
+}
+
+ads--CDockAreaTitleBar QAbstractButton:pressed {
+    background-color: #007acc;
+    border: 1px solid #005f9e;
+}
+
+/* The tab text */
+ads--CDockWidgetTab {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #555555;
+    border-radius: 4px;
+}
+
+ads--CDockWidgetTab:hover {
+    background-color: #4a4a4a;
+}
+
+ads--CDockWidgetTab[activeTab="true"] {
+    background-color: #3a3a3a;
+    color: #ffffff;
+}
+
+/* ---------------------------------------
+   QTADS FLOATING DOCK
+--------------------------------------- */
+ads--CFloatingDockContainer {
+    background-color: #2d2d2d;
+    border: 1px solid #555555;
+}
+
+ads--CFloatingDockContainer ads--CDockAreaTitleBar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #555555;
+}
+
+ads--CFloatingDockContainer QAbstractButton {
+    background-color: #333333;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 0px;
+}
+
+ads--CFloatingDockContainer QAbstractButton:hover {
+    background-color: #4a4a4a;
+    border: 1px solid #888888;
+}
+
+ads--CFloatingDockContainer QAbstractButton:pressed {
+    background-color: #007acc;
+    border: 1px solid #005f9e;
+}
+
+ads--CFloatingDockContainer ads--CDockWidgetTab {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #555555;
+    border-radius: 4px;
+}
+
+ads--CFloatingDockContainer ads--CDockWidgetTab:hover {
+    background-color: #4a4a4a;
+}
+
+ads--CFloatingDockContainer ads--CDockWidgetTab[activeTab="true"] {
+    background-color: #3a3a3a;
+    color: #ffffff;
+}
+
+/* ---------------------------------------
    2. BUTTONS & HOVER STATES
 --------------------------------------- */
 QPushButton {
