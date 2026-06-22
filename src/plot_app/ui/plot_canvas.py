@@ -26,7 +26,6 @@ class PlotCanvas(QWidget):
         self.plot_widget.setLabel('left', 'Y Axis')
         self.plot_widget.setLabel('bottom', 'X Axis')
         
-        
         self.current_curve = None
         self.current_file_name = None
 
@@ -78,7 +77,31 @@ class PlotCanvas(QWidget):
             symbolBrush=line_color
         )
 
+        self.plot_widget.getPlotItem().enableAutoRange()
         self.current_file_name = file_path.name
 
     def clear_canvas(self):
         self.plot_widget.clear()
+        self.current_file_name = None
+        self.current_curve = None
+
+
+    def handle_canvas_buttons_pressed(self, button_pressed):
+
+        match button_pressed:
+            case "zoom":
+                viewbox = self.plot_widget.getPlotItem().getViewBox()
+                viewbox.setMouseMode(pg.ViewBox.RectMode)
+            
+            case "pan":
+                viewbox = self.plot_widget.getPlotItem().getViewBox()
+                viewbox.setMouseMode(pg.ViewBox.PanMode)
+
+            case "reset":
+                self.plot_widget.getPlotItem().enableAutoRange()
+
+            case "clear":
+                self.clear_canvas()
+
+            case _:
+                pass

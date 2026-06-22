@@ -1,5 +1,5 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget, QPushButton
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget, QPushButton, QSizePolicy
 from PySide6.QtCore import Qt, QTimer
 import PySide6QtAds as ads
 
@@ -76,22 +76,71 @@ class MainWindow(QMainWindow):
         self.view_log_window_action = self.view_menu.addAction('Log window')
         self.view_log_window_action.triggered.connect(self.log_window.show)
 
-        self.view_DF_dock_window_action = self.view_menu.addAction('Data Folder')
-        self.view_DF_dock_window_action.triggered.connect(self._view_data_folder_clicked)
-        self.view_DF_dock_window_action.setEnabled(False)
-
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
+
         self.toolbar = self.addToolBar("Toolbar")
+        self.toolbar.layout().setSpacing(5) 
         self.toolbar.setFixedHeight(30)
         self.toolbar.setMovable(False)
+
+        # --- 1. View Data Folder Button ---
+        #Setup
         self.view_DF_button = QPushButton("🗂")
         self.view_DF_button.setFixedSize(20,20)
         self.view_DF_button.setProperty("cssClass", "icon-btn")
-        self.view_DF_button.setToolTip("Data Folder")
+        self.view_DF_button.setToolTip("Data Folder") #Text shown on hover
+        #Signals
         self.view_DF_button.clicked.connect(self._view_data_folder_clicked)
         self.view_DF_button_action = self.toolbar.addWidget(self.view_DF_button)
-        self.view_DF_button_action.setVisible(False)
+        self.view_DF_button_action.setVisible(False) #Invisible until project is loaded
+
+        # --- 2. Plot Canvas Buttons ---
+        #Add spacer
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.toolbar.addWidget(spacer)
+
+        #Zoom Button
+        self.zoom_btn = QPushButton('⬚')
+        self.zoom_btn.setFixedSize(20,20)
+        self.zoom_btn.setProperty("cssClass","icon-btn")
+        self.zoom_btn.setToolTip("Zoom (select area)")
+        self.zoom_btn.clicked.connect(lambda: self._handle_canvas_buttons('zoom'))
+        self.toolbar.addWidget(self.zoom_btn)
+
+        self.toolbar.addSeparator()
+
+        #Pan button
+        self.pan_btn = QPushButton('✥')
+        self.pan_btn.setFixedSize(20,20)
+        self.pan_btn.setProperty("cssClass","icon-btn")
+        self.pan_btn.setToolTip("Pan mode (drag)")
+        self.pan_btn.setProperty("active",True) #Default mouse mode
+        self.pan_btn.clicked.connect(lambda: self._handle_canvas_buttons('pan'))
+        self.toolbar.addWidget(self.pan_btn)
+
+        self.toolbar.addSeparator()
+
+        #Reset View button
+        self.reset_btn = QPushButton('⤢')
+        self.reset_btn.setFixedSize(20,20)
+        self.reset_btn.setProperty("cssClass","icon-btn")
+        self.reset_btn.setToolTip("Reset canvas view")
+        self.reset_btn.clicked.connect(lambda: self._handle_canvas_buttons('reset'))
+        self.toolbar.addWidget(self.reset_btn)
+
+        self.toolbar.addSeparator()
+
+        #Clear canvas button
+        self.clear_btn = QPushButton('↻')
+        self.clear_btn.setFixedSize(20,20)
+        self.clear_btn.setProperty("cssClass","icon-btn")
+        self.clear_btn.setToolTip("Clear Canvas")
+        self.clear_btn.clicked.connect(lambda: self._handle_canvas_buttons('clear'))
+        self.toolbar.addWidget(self.clear_btn)
+
+
     
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
@@ -213,6 +262,33 @@ class MainWindow(QMainWindow):
             )
 
         self.DF_dock.closeDockWidget()
+
+    def _handle_canvas_buttons(self, button_pressed):
+        """Handles the pressing of buttons related to Canvas functions, like switching mouse modes, or clearing the canvas. 
+        It redirects the click to the plot canvas class.
+        Also highlights the current mouse mode in use."""
+
+        self.plot_canvas.handle_canvas_buttons_pressed(button_pressed)
+
+        if button_pressed == "zoom":
+
+            self.zoom_btn.setProperty("active",True)
+            self.pan_btn.setProperty("active",False)
+
+            #Update the style so the active changes
+            self.zoom_btn.style().unpolish(self.zoom_btn)
+            self.zoom_btn.style().polish(self.zoom_btn)
+            self.pan_btn.style().unpolish(self.pan_btn)
+            self.pan_btn.style().polish(self.pan_btn)
+
+        elif button_pressed == "pan":
+
+            self.pan_btn.setProperty("active",True)
+            self.zoom_btn.setProperty("active",False)
+            self.zoom_btn.style().unpolish(self.zoom_btn)
+            self.zoom_btn.style().polish(self.zoom_btn)
+            self.pan_btn.style().unpolish(self.pan_btn)
+            self.pan_btn.style().polish(self.pan_btn)
     
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
@@ -257,7 +333,6 @@ class MainWindow(QMainWindow):
                 self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
                 self.file_tree.refresh()
                 self.view_DF_button_action.setVisible(True)
-                self.view_DF_dock_window_action.setEnabled(True)
                 self.view_DF_button.show()
 
                 self.app_logger.debug('Successfully opened Data Folder dock.')
@@ -281,7 +356,6 @@ class MainWindow(QMainWindow):
                 self.DF_dock.closeRequested.connect(self.handle_DF_dock_close)
 
                 #Reconnect View Data Folder button
-                self.view_DF_dock_window_action.setEnabled(True)
                 self.view_DF_button_action.setVisible(True)
 
                 #Log
@@ -310,7 +384,6 @@ class MainWindow(QMainWindow):
 
             #Close File Tree Dock
             self.handle_DF_dock_close()
-            self.view_DF_dock_window_action.setEnabled(False)
             self.view_DF_button_action.setVisible(False)
 
             #Reset Plot Canvas

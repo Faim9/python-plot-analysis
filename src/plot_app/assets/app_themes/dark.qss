@@ -125,6 +125,12 @@ QPushButton[cssClass="icon-btn"] {
     padding: 0px;
 }
 
+QPushButton[cssClass="icon-btn"][active="true"] {
+    background-color: #007acc;
+    color: #ffffff;
+    border: 1px solid #005f9e;
+}
+
 /* When the mouse hovers over the button */
 QPushButton:hover {
     background-color: #4a4a4a;
