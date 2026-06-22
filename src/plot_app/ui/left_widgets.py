@@ -1,6 +1,6 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeView, QFileSystemModel, QPushButton
-from PySide6.QtCore import QDir, Signal
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeView, QFileSystemModel, QPushButton, QSizeGrip
+from PySide6.QtCore import QDir, Signal, Qt, QEvent
 
 #Other imports
 from pathlib import Path
@@ -44,19 +44,20 @@ class BaseLeftPanelWidget(QWidget):
         self.header_layout.addWidget(self.refresh_btn)
         self.header_layout.addWidget(self.close_btn)
 
-        # Uncomment to add the Header row into the main layout
-        # Leave it if you want to give the header to a dock later.
-        #self.main_layout.addLayout(self.header_layout)
         
         # 3. The Widget itself
         # Initialize an empty layout here. 
         self.content_layout = QVBoxLayout()
         self.main_layout.addLayout(self.content_layout)
+        self.resize_grip = QSizeGrip(self)
+        self.main_layout.addWidget(self.resize_grip,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
+        self.resize_grip.hide()
 
         # 4. Keep it hidden until the child decides to show
         self.hide()
 
 
+    
 class DataFolderTreeWidget(BaseLeftPanelWidget):
 
     file_clicked = Signal(Path, str) #We give the path clicked and which panel was clicked on. In the future to differentiate between DF and AF files
@@ -65,6 +66,10 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         # 1. Call the parent's init, and pass the title!
         super().__init__(title_text="DF", parent=parent)
         
+        #State variables
+        self.current_data_folder = None #Later give the widget the data folder path to its memory, so refreshing is cleaner
+        self.current_directory = None
+
         # 2. Create the FileSystemModel
         self.model = QFileSystemModel()
         self.model.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.AllDirs | QDir.Filter.Files)
@@ -83,8 +88,6 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         # 4. Show and connect the refresh button
         self.refresh_btn.show()
         self.refresh_btn.clicked.connect(self._on_refresh_clicked)
-        self.current_data_folder = None #Later give the widget the data folder path to its memory, so refreshing is cleaner
-        self.current_directory = None
 
         #Create back button
         self.back_btn = QPushButton('↑')
@@ -93,6 +96,9 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         self.back_btn.clicked.connect(self._on_back_clicked)
         self.header_layout.insertWidget(2,self.back_btn)
         
+        # Uncomment to add the Header row into the main layout
+        # Leave commented if you want to give the header to a dock later.
+        # self.main_layout.insertWidget(0,self.header_widget)
         
 
         # 5. Handle file selection and double click
@@ -144,8 +150,10 @@ class DataFolderTreeWidget(BaseLeftPanelWidget):
         
 
     def refresh(self):
-        """Clears the list widget and populates it with .dat files from the Data Folder. This is called immedietely when the Tree is initialized in main_window."""
+        """Clears the file tree and populates it with .dat files from the Data Folder. This is called immedietely when the Tree is initialized in main_window."""
         if self.current_data_folder is None:
+            #Assume the project got closed. We need to stop showing the files.
+            self.current_directory = None
             return
         
         data_folder_str = str(self.current_data_folder)

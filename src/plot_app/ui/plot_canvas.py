@@ -79,3 +79,6 @@ class PlotCanvas(QWidget):
         )
 
         self.current_file_name = file_path.name
+
+    def clear_canvas(self):
+        self.plot_widget.clear()

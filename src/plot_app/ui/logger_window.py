@@ -38,7 +38,7 @@ class LoggerWindow(QWidget):
         self.qt_handler.signals.new_log.connect(self.write_log)
 
         self.app_logger = logging.getLogger('AppLogger')
-        self.app_logger.setLevel(logging.INFO)
+        self.app_logger.setLevel(logging.DEBUG)
         self.app_logger.addHandler(self.qt_handler)
 
     def write_log(self, message: str):

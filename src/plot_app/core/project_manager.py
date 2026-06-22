@@ -21,9 +21,48 @@ class ProjectManager:
         DF_path = pf_path / "DF"
 
         return pf_path.exists() and config_path.exists() and DF_path.exists()
+    
+    def save_project(self) -> bool:
+        if not self.is_project_loaded:
+            self.app_logger.error(f'No project loaded to save.')
+            return False
+        
+        self.app_logger.debug(f'Initializing project saving.')
+        # Save the important data
+        try:
+            self.project_config.save()
+            self.app_logger.debug(f'Project config saved')
+        except Exception as e:
+            self.app_logger.warning(f'Unable to save project config. Aborting save. {str(e)}.')
+            return False
+        
+        
+        self.app_logger.info(f'Saved successfully.')
+        return True
+
+    def close_project(self) -> bool:
+
+        save_success = self.save_project()
+
+        if save_success:
+            
+            self.app_logger.info(f'Closing current project.')
+            # Set the state variables to None again
+            self.active_project_path = None
+            self.project_config = None
+            self.is_project_loaded = False
+            self.app_logger.debug(f'Project manager state variables reset.')
+            self.app_logger.info(f'Project closed.')
+
+            return True
+
+        else:
+            self.app_logger.error(f'Unable to save project. Project not closed.')
+            return False
+
 
     def create_new_project(self, target_folder: str | Path) -> bool:
-        """Generates the PF, DF, and AF tree for a brand-new project."""
+        """Generates the PF, DF, and AF tree for a brand-new project. Does not load it after creating."""
         pf_path = Path(target_folder)
 
         # 1. Define the subfolders
@@ -36,17 +75,15 @@ class ProjectManager:
             df_path.mkdir(parents=True, exist_ok=True)
             af_path.mkdir(parents=True, exist_ok=True)
 
-            # 3. Store the active project path
-            self.active_project_path = pf_path
+            #Call Project config just to create the config files
+            ProjectConfig(target_folder)
             
-            # 4. Initialize the config (this creates project_prefs.json with defaults in .other/)
-            self.project_config = ProjectConfig(self.active_project_path)
-            
-            self.is_project_loaded = True
+            self.app_logger.info(f'Successfully created new project at {str(target_folder)}')
+
             return True
             
         except Exception as e:
-            print(f"Failed to create project tree: {e}")
+            self.app_logger.error(f'Failed to create project.')
             return False
 
     def load_project(self, folder_path: str | Path) -> bool:

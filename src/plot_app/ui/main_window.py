@@ -1,6 +1,6 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget, QPushButton
+from PySide6.QtCore import Qt, QTimer
 
 #Importing our own modules
 from core.project_manager import ProjectManager
@@ -17,7 +17,7 @@ import logging
 class MainWindow(QMainWindow):
     def __init__(self,log_window):
         super().__init__()
-
+        
         #Save log window so we can show on demand
         self.log_window = log_window
 
@@ -47,15 +47,17 @@ class MainWindow(QMainWindow):
         """Creates the menubar and its actions."""
         menubar = self.menuBar()
         
-        # 1. ---File menu---
-        file_menu = menubar.addMenu("File")
+        # 1. ---Project menu---
+        project_menu = menubar.addMenu("Project")
         
-        new_project_action = file_menu.addAction("New Project")
-        open_project_action = file_menu.addAction("Open Project")
-        save_project_action = file_menu.addAction("Save Project")
+        new_project_action = project_menu.addAction("New")
+        open_project_action = project_menu.addAction("Open")
+        save_project_action = project_menu.addAction("Save")
+        close_project_action = project_menu.addAction('Close')
 
-        #Import menu inside File menu
-        import_menu = file_menu.addMenu('Import')
+        # 2. --- Import Menu ---
+        #Import menu inside Project menu
+        import_menu = menubar.addMenu('Import')
         import_folders_action = import_menu.addAction('Folders')
         import_files_action= import_menu.addAction('Files')
 
@@ -63,20 +65,30 @@ class MainWindow(QMainWindow):
         new_project_action.triggered.connect(self.new_project)
         open_project_action.triggered.connect(self.open_project)
         save_project_action.triggered.connect(self.save_project)
+        close_project_action.triggered.connect(self.close_project)
         import_folders_action.triggered.connect(self._import_folders)
         import_files_action.triggered.connect(self._import_files)
 
         # 2. ---View menu---
-        view_menu = menubar.addMenu("View")
+        self.view_menu = menubar.addMenu("View")
 
-        view_log_window_action = view_menu.addAction('Log window')
-        view_log_window_action.triggered.connect(self.log_window.show)
+        self.view_log_window_action = self.view_menu.addAction('Log window')
+        self.view_log_window_action.triggered.connect(self.log_window.show)
+
+        self.view_DF_dock_window_action = self.view_menu.addAction('Data Folder')
+        self.view_DF_dock_window_action.triggered.connect(self._view_data_folder_clicked)
+        self.view_DF_dock_window_action.setEnabled(False)
 
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
-        #self.toolbar = self.addToolBar("Toolbar")
+        self.toolbar = self.addToolBar("Toolbar")
+        self.view_DF_button = QPushButton("DF")
+        self.view_DF_button.setFixedSize(20,20)
+        self.view_DF_button.setProperty("cssClass", "icon-btn")
+        self.view_DF_button.clicked.connect(self._view_data_folder_clicked)
 
-        pass
+        self.toolbar.addWidget(self.view_DF_button)
+
         
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using a QSplitter. File tree, options, etc on the left. Plot canvas on the right."""
@@ -123,8 +135,6 @@ class MainWindow(QMainWindow):
 
         self.project_manager.import_folder(source_folder)
 
-        
-
     def _import_files(self):
         '''Import files .dat to the Data Folder, /DF'''
         
@@ -146,7 +156,6 @@ class MainWindow(QMainWindow):
 
         #Import files
         self.project_manager.import_files(imported_files)
-
 
     def _on_tree_file_clicked(self, file_path: Path, file_tree_object: str):
         """Triggered when a file is clicked in a File Tree View. It hands the file path to the appropriate object (ex: data folder files are handed to plot_canvas)"""
@@ -188,12 +197,36 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f'The theme {theme_name} is not recognised.') 
             self.app_logger.error(f'The theme {theme_name} is not recognised.')
             return
+    
+    def _view_data_folder_clicked(self):
+        if not self.project_manager.is_project_loaded:
+            return
+        
+        if self.DF_dock.isFloating():
+        # Save geometry before touching anything
+            geom = self.DF_dock.geometry()
+            
+            # Remove and re-add instead of setFloating(False)
+            self.removeDockWidget(self.DF_dock)
+            self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.DF_dock)
+            self.DF_dock.show()
+        else:
+            self.DF_dock.show()
+
+    def handle_DF_dock_close(self):
+        """Handles the closing of the Data Folder Tree View Dock correctly."""
+        self.DF_dock.hide()
     # -------------------------------------------------------------------------
     # UI Logic & Callbacks
     # -------------------------------------------------------------------------
 
     def new_project(self):
         """Handles the creation of a new project."""
+        if self.project_manager.is_project_loaded:
+            self.status_bar.showMessage(f'Project already opened. Save and close it before creating a new one.')
+            self.app_logger.warning(f'Project already opened. Save and close it before creating a new one.')
+            return
+
         folder = QFileDialog.getExistingDirectory(self, "Select Folder for New Project")
 
         if not folder:
@@ -202,17 +235,17 @@ class MainWindow(QMainWindow):
         success = self.project_manager.create_new_project(folder)
 
         if success:
-            self.status_bar.showMessage(f"Project created at: {folder}")
-            self.file_tree = DataFolderTreeWidget()
-            self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
-            self.file_tree.refresh()
-            self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
-        else:
-            self.status_bar.showMessage("Failed to create project.")
+            self.open_project(folder)
 
-    def open_project(self):
+    def open_project(self,folder):
         """Handles loading an existing project."""
-        folder = QFileDialog.getExistingDirectory(self, "Select Project Folder")
+        if self.project_manager.is_project_loaded:
+            self.status_bar.showMessage(f'Project already opened. Save and close it before opening a new one.')
+            self.app_logger.warning(f'Project already opened. Save and close it before opening a new one.')
+            return
+
+        if type(folder) is not str:
+            folder = QFileDialog.getExistingDirectory(self, "Select Project Folder")
 
         success = self.project_manager.load_project(folder)
 
@@ -220,40 +253,77 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Project loaded from: {folder}")
             self.app_logger.info(f"Project loaded from: {folder}")
 
-            self.file_tree = DataFolderTreeWidget()
-            self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
-            self.file_tree.refresh()
-            self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
-            self.test_dock = QDockWidget(self)
-            self.test_dock.setTitleBarWidget(self.file_tree.header_widget)
-            self.test_dock.setWidget(self.file_tree)
-            self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.test_dock)
-            self.file_tree.close_requested.connect(self.test_dock.hide)
-            self.test_dock.show()
+
+
+            try: # If it's not the first time the user opens a project in current session, the necessary widgets are already loaded.
+                self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
+                self.file_tree.refresh()
+                self.DF_dock.show()
+                self.view_DF_dock_window_action.setEnabled(True)
+
+                self.app_logger.debug('Successfully opened Data Folder dock.')
+
+            except: # If it's the first time, accessing self.file_tree will send an undefined error. 
+
+                #Initialize the File Tree
+                self.file_tree = DataFolderTreeWidget()
+                self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
+                self.file_tree.refresh()
+                self.file_tree.file_clicked.connect(self._on_tree_file_clicked)
+
+                #Initialize a Dock container and give it the File Tree Widget showing the data folder
+                self.DF_dock = QDockWidget('',self)
+                #self.DF_dock.setTitleBarWidget(self.file_tree.header_widget)
+                self.DF_dock.setWidget(self.file_tree)
+                #self.DF_dock.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea)
+                self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.DF_dock)
+
+                # Connect the close request signal from File Tree's close button
+                self.file_tree.close_requested.connect(self.handle_DF_dock_close)
+                self.DF_dock.topLevelChanged.connect(self.file_tree.resize_grip.setVisible)
+
+                #Show
+                self.DF_dock.show()
+
+                #Reconnect View Data Folder button
+                self.view_DF_dock_window_action.setEnabled(True)
+
+                #Log
+                self.app_logger.debug('Successfully opened Data Folder dock.')
         else:
             self.status_bar.showMessage("Failed to load project.")
             self.app_logger.error("Failed to load project.")
             
-    def save_project(self):
+    def save_project(self) -> bool:
         """Saves the current project settings."""
-        if self.project_manager.project_config:
-            self.project_manager.project_config.save()
-            self.status_bar.showMessage("Project saved successfully.")
-        else:
-            self.status_bar.showMessage("No project loaded to save.")
+        return self.project_manager.save_project()
 
-    
-    
-    
-    
-    
-    def save_configs(self):
-        """Saves the current project settings."""
-        if self.project_manager.project_config:
-            self.project_manager.project_config.save()
-            self.status_bar.showMessage("Project configs saved successfully.")
+    def close_project(self) -> bool:
+        """Saves and closes current project"""
+        if self.project_manager.is_project_loaded:
+            success = self.project_manager.close_project()
         else:
-            self.status_bar.showMessage("No project loaded to save configs.")
+            self.app_logger.error(f'No project loaded to close.')
+            return False
+
+        if success:
+            
+            #Reset File Tree
+            self.file_tree.current_data_folder = None
+            self.file_tree.refresh()
+
+            #Close File Tree Dock
+            self.handle_DF_dock_close()
+            self.view_DF_dock_window_action.setEnabled(False)
+
+            #Reset Plot Canvas
+            self.plot_canvas.clear_canvas()
+
+            self.app_logger.info(f'UI reseted.')
+
+            return True
+        else:
+            return False
 
     
     
