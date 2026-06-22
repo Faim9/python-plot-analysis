@@ -1,18 +1,14 @@
 #Importing Pyside6 modules
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QFileDialog, QSplitter, QApplication, QDockWidget, QPushButton, QSizePolicy
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QMainWindow, QWidget, QFileDialog, QApplication, QPushButton, QSizePolicy
 import PySide6QtAds as ads
 
 #Importing our own modules
 from core.project_manager import ProjectManager
 from ui.plot_canvas import PlotCanvas
 from ui.left_widgets import DataFolderTreeWidget, PlotOptionsWidget
-from ui.dialogs import FileConflictDialog
-from utils.file_ops import get_safe_path_destination
 
 #Other imports
 from pathlib import Path
-from shutil import copy2, copytree
 import logging
 
 class MainWindow(QMainWindow):
@@ -93,9 +89,19 @@ class MainWindow(QMainWindow):
         #Signals
         self.view_DF_button.clicked.connect(self._on_view_data_folder_clicked)
         self.view_DF_button_action = self.toolbar.addWidget(self.view_DF_button)
-        self.view_DF_button_action.setVisible(False) #Invisible until project is loaded
+        self.view_DF_button_action.setEnabled(False) #Invisible until project is loaded
 
-        # --- 2. Plot Canvas Buttons ---
+        self.toolbar.addSeparator()
+
+        # --- 2. Plot Options Button ---
+        self.view_plot_options_btn = QPushButton("⚙")
+        self.view_plot_options_btn.setFixedSize(20,20)
+        self.view_plot_options_btn.setProperty("cssClass", "icon-btn")
+        self.view_plot_options_btn.setToolTip("Plot options") #Text shown on hover
+        #Signals
+        self.view_plot_options_btn_action = self.toolbar.addWidget(self.view_plot_options_btn)
+        
+        # --- 3. Plot Canvas Buttons ---
         #Add spacer
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -169,10 +175,11 @@ class MainWindow(QMainWindow):
         self.plot_options_dock = ads.CDockWidget("Plot Options")
         self.plot_options_dock.setFeature(ads.CDockWidget.DockWidgetFeature.CustomCloseHandling, True)
         self.plot_options_dock.closeRequested.connect(lambda: self.handle_panel_dock_close(self.plot_options_dock))
+        self.plot_options_dock.topLevelChanged.connect(self.plot_options_widget.resize_grip.setVisible)
         self.plot_options_dock.setWidget(self.plot_options_widget)
         self.dock_manager.addDockWidget(ads.DockWidgetArea.BottomDockWidgetArea , self.plot_options_dock,self.left_dock_area)
 
-        
+        self.view_plot_options_btn.clicked.connect(lambda: self.plot_options_dock.toggleView(True))
     
     def _setup_status_bar(self):
         """Initializes the status bar for displaying messages."""
@@ -280,7 +287,7 @@ class MainWindow(QMainWindow):
         """Handles the closing of any Dock panel correctly."""
 
         if panel.isFloating():
-            self.dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea,panel)
+            self.dock_manager.addDockWidget(ads.DockWidgetArea.BottomDockWidgetArea,panel,self.left_dock_area)
         
         panel.closeDockWidget()
 
@@ -354,7 +361,7 @@ class MainWindow(QMainWindow):
             try: # If it's not the first time the user opens a project in current session, the necessary widgets are already loaded.
                 self.file_tree.current_data_folder = Path(folder)/'DF' #type:ignore
                 self.file_tree.refresh()
-                self.view_DF_button_action.setVisible(True)
+                self.view_DF_button_action.setEnabled(True)
                 self.view_DF_button.show()
 
                 self.app_logger.debug('Successfully opened Data Folder dock.')
@@ -379,7 +386,7 @@ class MainWindow(QMainWindow):
                 self.DF_dock.topLevelChanged.connect(self.file_tree.resize_grip.setVisible)
 
                 #Reconnect View Data Folder button
-                self.view_DF_button_action.setVisible(True)
+                self.view_DF_button_action.setEnabled(True)
 
                 #Log
                 self.app_logger.debug('Successfully opened Data Folder dock.')
