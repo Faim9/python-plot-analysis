@@ -76,7 +76,6 @@ class MainWindow(QMainWindow):
         """Creates and configures the toolbar."""
 
         self.toolbar = self.addToolBar("Toolbar")
-        self.toolbar.layout().setSpacing(5) 
         self.toolbar.setFixedHeight(30)
         self.toolbar.setMovable(False)
 
