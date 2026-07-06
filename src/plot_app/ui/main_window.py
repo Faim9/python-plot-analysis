@@ -1,11 +1,13 @@
 #Importing Pyside6 modules
 from PySide6.QtWidgets import QMainWindow, QWidget, QFileDialog, QApplication, QPushButton, QSizePolicy
+from PySide6.QtCore import Qt
 import PySide6QtAds as ads
 
 #Importing our own modules
 from core.project_manager import ProjectManager
 from ui.plot_canvas import PlotCanvas
 from ui.left_widgets import DataFolderTreeWidget, PlotOptionsWidget
+from ui.toolbar import ToolBarManager
 
 #Other imports
 from pathlib import Path
@@ -26,7 +28,7 @@ class MainWindow(QMainWindow):
         # 1. Setup the main window properties
         self._setup_window()
         
-        # 2. Create and setup the setup_menubar (file/edit ...), toolbar (icons), central widget and status bar (bottom messages)
+        # 2. Create and setup the menubar (file/edit ...), toolbar (icons), central widget and status bar (bottom messages)
         self._setup_menubar()
         self._setup_toolbar()
         self._setup_central_widget()
@@ -75,75 +77,18 @@ class MainWindow(QMainWindow):
     def _setup_toolbar(self):
         """Creates and configures the toolbar."""
 
-        self.toolbar = self.addToolBar("Toolbar")
-        self.toolbar.setFixedHeight(30)
-        self.toolbar.setMovable(False)
+        self.toolbar = ToolBarManager(self)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea,self.toolbar)
+        self.toolbar.set_button_enabled('view_data_folder', False)  # Initially disabled until a project is loaded
 
-        # --- 1. View Data Folder Button ---
-        #Setup
-        self.view_DF_button = QPushButton("🗂")
-        self.view_DF_button.setFixedSize(20,20)
-        self.view_DF_button.setProperty("cssClass", "icon-btn")
-        self.view_DF_button.setToolTip("Data Folder") #Text shown on hover
-        #Signals
-        self.view_DF_button.clicked.connect(self._on_view_data_folder_clicked)
-        self.view_DF_button_action = self.toolbar.addWidget(self.view_DF_button)
-        self.view_DF_button_action.setEnabled(False) #Invisible until project is loaded
+        self.toolbar.button_interacted.connect(self._handle_toolbar_interactions)
 
-        self.toolbar.addSeparator()
-
-        # --- 2. Plot Options Button ---
-        self.view_plot_options_btn = QPushButton("⚙")
-        self.view_plot_options_btn.setFixedSize(20,20)
-        self.view_plot_options_btn.setProperty("cssClass", "icon-btn")
-        self.view_plot_options_btn.setToolTip("Plot options") #Text shown on hover
-        #Signals
-        self.view_plot_options_btn_action = self.toolbar.addWidget(self.view_plot_options_btn)
-        
-        # --- 3. Plot Canvas Buttons ---
-        #Add spacer
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.toolbar.addWidget(spacer)
-
-        #Zoom Button
-        self.zoom_btn = QPushButton('⬚')
-        self.zoom_btn.setFixedSize(20,20)
-        self.zoom_btn.setProperty("cssClass","icon-btn")
-        self.zoom_btn.setToolTip("Zoom (select area)")
-        self.zoom_btn.clicked.connect(lambda: self._handle_canvas_buttons('zoom'))
-        self.toolbar.addWidget(self.zoom_btn)
-
-        self.toolbar.addSeparator()
-
-        #Pan button
-        self.pan_btn = QPushButton('✥')
-        self.pan_btn.setFixedSize(20,20)
-        self.pan_btn.setProperty("cssClass","icon-btn")
-        self.pan_btn.setToolTip("Pan mode (drag)")
-        self.pan_btn.setProperty("active",True) #Default mouse mode
-        self.pan_btn.clicked.connect(lambda: self._handle_canvas_buttons('pan'))
-        self.toolbar.addWidget(self.pan_btn)
-
-        self.toolbar.addSeparator()
-
-        #Reset View button
-        self.reset_btn = QPushButton('⤢')
-        self.reset_btn.setFixedSize(20,20)
-        self.reset_btn.setProperty("cssClass","icon-btn")
-        self.reset_btn.setToolTip("Reset canvas view")
-        self.reset_btn.clicked.connect(lambda: self._handle_canvas_buttons('reset'))
-        self.toolbar.addWidget(self.reset_btn)
-
-        self.toolbar.addSeparator()
-
-        #Clear canvas button
-        self.clear_btn = QPushButton('↻')
-        self.clear_btn.setFixedSize(20,20)
-        self.clear_btn.setProperty("cssClass","icon-btn")
-        self.clear_btn.setToolTip("Clear Canvas")
-        self.clear_btn.clicked.connect(lambda: self._handle_canvas_buttons('clear'))
-        self.toolbar.addWidget(self.clear_btn)
+    def _handle_toolbar_interactions(self, button_id: str, checked: bool):
+        """Handles interactions with toolbar buttons."""
+        if button_id == 'view_data_folder':
+            self._on_view_data_folder_clicked()
+        #elif button_id == 'view_plot_options':
+            #self._on_view_plot_options_clicked()
 
     def _setup_central_widget(self):
         """Creates and places all visual widgets into layouts using Dock. File tree, options, etc on the left. Plot canvas on the right."""
@@ -185,7 +130,28 @@ class MainWindow(QMainWindow):
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Ready. Create a new project or open an existing one.")
         self.app_logger.info("Application initiated. Ready to open or create a project.")
-        
+
+    #------------------------------
+    # Helper Toolbar Functions
+    #------------------------------
+
+    def _create_toolbar_button(self, text:str,tooltip:str, size=(20,20), checkable:bool=False, on_click_callback =None, on_toggle_callback =None) -> QPushButton:
+        """Creates a Buttons for the toolbar"""
+
+        btn = QPushButton(text)
+        btn.setFixedSize(*size)
+        btn.setProperty('cssClass',"icon-btn")
+        btn.setToolTip(tooltip)
+
+        if checkable:
+            btn.setCheckable(True)
+            btn.toggled.connect(on_toggle_callback)
+
+        elif on_click_callback: 
+            btn.clicked.connect(on_click_callback)
+
+        return btn
+
     # -------------------------------------------------------------------------
     # Connecting signals and logic
     # -------------------------------------------------------------------------

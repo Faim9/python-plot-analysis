@@ -534,5 +534,5 @@ class PlotOptionsWidget(BaseLeftPanelWidget):
         for key in self._all_synced:
             self._all_synced[key] = False
 
-        
+
         
